@@ -22,3 +22,5 @@ shutil.rmtree(os.path.join('release', '.cache'))
 # Copy Volt.cmake
 
 shutil.copyfile( os.path.join('cmake', 'Volt.cmake'), os.path.join('release', 'Volt.cmake'))
+
+input('Press ENTER to continue...')
