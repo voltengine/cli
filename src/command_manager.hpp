@@ -1,8 +1,6 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
+#include "pch.hpp"
 
 #include "command.hpp"
 
@@ -10,10 +8,10 @@ class command_manager {
 public:
 	static void init();
 
-	static const std::vector<std::unique_ptr<command>> &get_commands();
+	static const std::unordered_map<std::string, std::shared_ptr<const command>> &get_commands();
 
-	static const std::unique_ptr<command> &find_command(std::string name);
+	static std::shared_ptr<const command> find_command(const std::string &name);
 	
 private:
-	static std::vector<std::unique_ptr<command>> commands;
+	static std::unordered_map<std::string, std::shared_ptr<const command>> commands;
 };

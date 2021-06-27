@@ -1,10 +1,16 @@
 #pragma once
 
+#include "pch.hpp"
+
 #include "command.hpp"
 
-class help_command : public command {
+namespace commands {
+
+class list_command : public command {
 public:
-	help_command();
+	list_command();
 
 	void run(const std::vector<std::string> &args) const override;
 };
+
+}

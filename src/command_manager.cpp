@@ -1,32 +1,26 @@
 #include "command_manager.hpp"
 
-#include <algorithm>
+#include "commands/help_command.hpp"
+#include "commands/list_command.hpp"
 
-#include "help_command.hpp"
-
-template<typename T>
-std::unique_ptr<command> make_command() {
-	return std::unique_ptr<command>(static_cast<command *>(new T));
-}
+using namespace commands;
 
 void command_manager::init() {
-	commands.push_back(make_command<help_command>());
+	commands["help"] = std::make_shared<help_command>();
+	commands["list"] = std::make_shared<list_command>();
 }
 
-const std::vector<std::unique_ptr<command>> &command_manager::get_commands() {
+const std::unordered_map<std::string, std::shared_ptr<const command>> &command_manager::get_commands() {
 	return commands;
 }
 
-const std::unique_ptr<command> &command_manager::find_command(std::string name) {
-	std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-	
-	auto it = std::find_if(commands.begin(), commands.end(),
-			[name](const auto &cmd) { return cmd->name == name; });
-
-	if (it != commands.end())
-		return *it;
+std::shared_ptr<const command> command_manager::
+		find_command(const std::string &name) {
+	if (commands.contains(name))
+		return commands[name];
 	else
 		return nullptr;
+	
 }
 
-std::vector<std::unique_ptr<command>> command_manager::commands;
+std::unordered_map<std::string, std::shared_ptr<const command>> command_manager::commands;
