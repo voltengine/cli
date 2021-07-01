@@ -6,7 +6,7 @@ namespace util {
 
 static json parse_rapidjson_value(Value::ConstValueIterator value);
 
-static std::string escape_json(const std::string &str);
+static std::string escape_json(std::string_view str);
 
 json::json(null) {}
 
@@ -64,9 +64,9 @@ const json &json::operator[](size_t index) const {
 	return as<array>()[index];
 }
 
-json json::from_string(const std::string &json) {
+json json::from_string(std::string_view json) {
 	Document document;
-	document.Parse(json.c_str());
+	document.Parse(json.data());
 	return parse_rapidjson_value(&document);
 }
 
@@ -164,7 +164,7 @@ static json parse_rapidjson_value(Value::ConstValueIterator value) {
 	return json();
 }
 
-static std::string escape_json(const std::string &str) {
+static std::string escape_json(std::string_view str) {
     std::ostringstream ss;
 
     for (char c : str) {

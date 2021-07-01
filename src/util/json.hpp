@@ -81,7 +81,7 @@ public:
 
 	bool operator==(const json &json) const = default;
 
-	static json from_string(const std::string &json);
+	static json from_string(std::string_view json);
 
 	template<json_type T>
 	bool is() const;

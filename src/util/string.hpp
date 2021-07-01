@@ -19,8 +19,8 @@ std::string to_string(float value, bool trim_zeros = true, int32_t precision = 6
 
 std::string to_string(double value, bool trim_zeros = true, int32_t precision = 6);
 
-std::vector<std::string> tokenize(const std::string &str,
-		const std::string &delimiter, bool skip_empty = false);
+std::vector<std::string> tokenize(std::string_view str,
+		std::string_view delimiter, bool skip_empty = false);
 
 }
 

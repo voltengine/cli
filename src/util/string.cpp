@@ -40,15 +40,15 @@ std::string to_string(double value, bool trim_zeros, int32_t precision) {
 	return format_fp(value, trim_zeros, precision);
 }
 
-std::vector<std::string> tokenize(const std::string &str,
-		const std::string &delimiter, bool skip_empty) {
+std::vector<std::string> tokenize(std::string_view str,
+		std::string_view delimiter, bool skip_empty) {
 	std::vector<std::string> tokens;
 	size_t pos = 0, len = str.size();
 
 	while (pos <= len) {
 		size_t new_pos = std::min(str.find(delimiter, pos), len);
 		if (!skip_empty || new_pos != pos)
-			tokens.push_back(str.substr(pos, new_pos - pos));
+			tokens.push_back(std::string(str.substr(pos, new_pos - pos)));
 		pos = new_pos + 1;
 	}
 

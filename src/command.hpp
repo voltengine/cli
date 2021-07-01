@@ -11,7 +11,7 @@ public:
 	virtual void run(const std::vector<std::string> &args) const = 0;
 	
 protected:
-	command(const std::string &name,
-			const std::string &syntax,
-			const std::string &description);
+	command(std::string_view name,
+			std::string_view syntax,
+			std::string_view description);
 };

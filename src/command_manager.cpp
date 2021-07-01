@@ -10,7 +10,8 @@ void command_manager::init() {
 	commands["list"] = std::make_shared<list_command>();
 }
 
-const std::unordered_map<std::string, std::shared_ptr<const command>> &command_manager::get_commands() {
+const std::unordered_map<std::string, std::shared_ptr<
+		const command>> &command_manager::get_commands() {
 	return commands;
 }
 
@@ -23,4 +24,5 @@ std::shared_ptr<const command> command_manager::
 	
 }
 
-std::unordered_map<std::string, std::shared_ptr<const command>> command_manager::commands;
+std::unordered_map<std::string, std::shared_ptr<
+		const command>> command_manager::commands;

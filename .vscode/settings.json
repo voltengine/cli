@@ -63,6 +63,10 @@
 		"xutility": "cpp",
 		"sstream": "cpp",
 		"variant": "cpp",
-		"cassert": "cpp"
+		"cassert": "cpp",
+		"map": "cpp",
+		"xtree": "cpp",
+		"numeric": "cpp",
+		"random": "cpp"
 	}
 }

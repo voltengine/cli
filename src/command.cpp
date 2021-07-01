@@ -1,7 +1,7 @@
 #include "command.hpp"
 
-command::command(const std::string &name,
-		const std::string &syntax,
-		const std::string &description)
+command::command(std::string_view name,
+		std::string_view syntax,
+		std::string_view description)
 		: name(name), syntax(syntax), description(description) {}
 		
