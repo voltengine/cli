@@ -1,0 +1,11 @@
+{
+	"name": "volt-cli",
+	"version-string": "0.1.0",
+	"homepage": "https://github.com/voltengine/volt-cli",
+	"description": "Volt package manager.",
+	"dependencies": [
+		"rapidjson",
+		"termcolor",
+		"libgit2"
+	]
+}

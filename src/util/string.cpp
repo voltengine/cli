@@ -1,4 +1,4 @@
-#include "util/string.hpp"
+#include "string.hpp"
 
 namespace util {
 
@@ -40,7 +40,7 @@ std::string to_string(double value, bool trim_zeros, int32_t precision) {
 	return format_fp(value, trim_zeros, precision);
 }
 
-std::vector<std::string> tokenize(std::string_view str,
+std::vector<std::string> split(std::string_view str,
 		std::string_view delimiter, bool skip_empty) {
 	std::vector<std::string> tokens;
 	size_t pos = 0, len = str.size();

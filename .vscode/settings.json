@@ -1,6 +1,6 @@
 {
 	"cmake.debugConfig": {
-        "args": ["list"]
+        "args": ["info", "volt"]
     },
 	"files.associations": {
 		"*.fsh": "glsl",
@@ -67,6 +67,7 @@
 		"map": "cpp",
 		"xtree": "cpp",
 		"numeric": "cpp",
-		"random": "cpp"
+		"random": "cpp",
+		"fstream": "cpp"
 	}
 }

@@ -1,4 +1,4 @@
-#include "util/json.hpp"
+#include "json.hpp"
 
 using namespace rapidjson;
 
@@ -8,17 +8,13 @@ static json parse_rapidjson_value(Value::ConstValueIterator value);
 
 static std::string escape_json(std::string_view str);
 
-json::json(null) {}
+json::json(number value) noexcept : value(value) {}
 
-json::json(number value) : value(value) {}
-
-json::json(const string &value) : value(value) {}
-
-json::json(string &&value) : value(std::move(value)) {}
+json::json(string &&value) noexcept : value(std::move(value)) {}
 
 json::json(const array &value) : value(value) {}
 
-json::json(array &&value) : value(std::move(value)) {}
+json::json(array &&value) noexcept : value(std::move(value)) {}
 
 json::json(const object &value) : value(value) {}
 
@@ -30,14 +26,6 @@ json::operator number() const {
 
 json::operator number &() {
 	return as<number>();
-}
-
-json::operator const string &() const {
-	return as<string>();
-}
-
-json::operator string &() {
-	return as<string>();
 }
 
 json::operator const array &() const {
@@ -56,6 +44,10 @@ json::operator object &() {
 	return as<object>();
 }
 
+std::ostream &operator<<(std::ostream &lhs, const json &rhs) {
+	return lhs << rhs.to_string();
+}
+
 json &json::operator[](size_t index) {
 	return as<array>()[index];
 }
@@ -64,13 +56,13 @@ const json &json::operator[](size_t index) const {
 	return as<array>()[index];
 }
 
-json json::from_string(std::string_view json) {
+json json::parse(std::string_view json) {
 	Document document;
 	document.Parse(json.data());
 	return parse_rapidjson_value(&document);
 }
 
-std::string json::to_string(uint8_t indent) const {
+std::string json::to_string(uint8_t current_indent) const {
 	if (is<json::null>())
 		return "null";
 
@@ -83,7 +75,7 @@ std::string json::to_string(uint8_t indent) const {
 	if (is<json::string>())
 		return '"' + escape_json(as<json::string>()) + '"';
 
-	std::string indent_str(indent, '\t');
+	std::string indent_str(current_indent, '\t');
 	std::ostringstream ss;
 
 	if (is<json::array>()) {
@@ -92,7 +84,7 @@ std::string json::to_string(uint8_t indent) const {
 		ss << '[';
 		for (auto it = array.cbegin(); it != array.cend(); it++) {
 			ss << "\n\t" << indent_str
-					<< it->to_string(indent + 1)
+					<< it->to_string(current_indent + 1)
 					<< (std::next(it) == array.cend() ? '\n' : ',');
 		}
 
@@ -107,7 +99,7 @@ std::string json::to_string(uint8_t indent) const {
 		ss << '{';
 		for (auto it = object.cbegin(); it != object.cend(); it++) {
 			ss << "\n\t" << indent_str
-					<< '"' << escape_json(it->first) << "\": " << it->second.to_string(indent + 1)
+					<< '"' << escape_json(it->first) << "\": " << it->second.to_string(current_indent + 1)
 					<< (std::next(it) == object.cend() ? '\n' : ',');
 		}
 
@@ -119,10 +111,6 @@ std::string json::to_string(uint8_t indent) const {
 	}
 
 	return ss.str();
-}
-
-std::ostream &operator<<(std::ostream &lhs, const json &rhs) {
-	return lhs << rhs.to_string();
 }
 
 static json parse_rapidjson_value(Value::ConstValueIterator value) {

@@ -10,9 +10,9 @@ endforeach()
 
 # Find Conan packages
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
-find_package(RapidJSON)
-find_package(termcolor)
-find_package(libgit2)
+find_package(RapidJSON REQUIRED)
+find_package(termcolor REQUIRED)
+find_package(libgit2 REQUIRED)
 
 file(GLOB_RECURSE TARGET_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
@@ -31,7 +31,7 @@ target_include_directories(volt_cli PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_link_libraries(volt_cli
+target_link_libraries(volt_cli PRIVATE
     RapidJSON::RapidJSON
     termcolor::termcolor
     libgit2::libgit2

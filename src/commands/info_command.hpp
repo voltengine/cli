@@ -6,9 +6,9 @@
 
 namespace commands {
 
-class list_command : public command {
+class info_command : public command {
 public:
-	list_command();
+	info_command();
 
 	bool run(const std::vector<std::string> &args) const override;
 };

@@ -9,7 +9,7 @@ public:
 	static void init();
 
 	static const std::unordered_map<std::string, std::shared_ptr<
-			const command>> &get_commands();
+			const command>> &get_commands() noexcept;
 
 	static std::shared_ptr<const command>
 			find_command(const std::string &name);

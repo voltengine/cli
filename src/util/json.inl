@@ -1,7 +1,10 @@
 namespace util {
 
 template<std::same_as<json::boolean> Boolean>
-json::json(Boolean value) : value(value) {}
+json::json(Boolean value) noexcept : value(value) {}
+
+template<string_type String>
+json::json(const String &value) : value(static_cast<string>(value)) {}
 
 template<std::same_as<json::boolean> Boolean>
 json::operator Boolean() const {
@@ -13,6 +16,16 @@ json::operator Boolean &() {
 	return as<boolean>();
 }
 
+template<string_type String>
+json::operator const String &() const {
+	return as<string>();
+}
+
+template<string_type String>
+json::operator String &() {
+	return as<string>();
+}
+
 template<string_type Key>
 json &json::operator[](const Key &key) {
 	return as<object>()[key];
@@ -20,11 +33,11 @@ json &json::operator[](const Key &key) {
 
 template<string_type Key>
 const json &json::operator[](const Key &key) const {
-	return as<object>().at(key);
+	return as<object>()[key];
 }
 
 template<json_type T>
-bool json::is() const {
+bool json::is() const noexcept {
 	return std::holds_alternative<T>(value);
 }
 

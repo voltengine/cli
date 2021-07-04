@@ -30,6 +30,8 @@ public:
 
 	int32_t compare(const version &other) const noexcept;
 
+	bool is_backward_compatible(const version &previous) const noexcept;
+
 	const std::vector<std::string> &get_pre_release() const noexcept;
 
 	void set_pre_release(const std::vector<std::string> &pre_release);

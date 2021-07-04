@@ -8,7 +8,7 @@ public:
 
 	virtual ~command() = default;
 
-	virtual void run(const std::vector<std::string> &args) const = 0;
+	virtual bool run(const std::vector<std::string> &args) const = 0;
 	
 protected:
 	command(std::string_view name,

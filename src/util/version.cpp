@@ -39,17 +39,17 @@ version::version(const std::string &str) {
 			std::string pre_release = str.substr(hyphen_pos + 1, plus_pos - hyphen_pos - 1);
 			std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
 
-			this->pre_release = util::tokenize(pre_release, ".");
-			this->build_metadata = util::tokenize(build_metadata, ".");
+			this->pre_release = util::split(pre_release, ".");
+			this->build_metadata = util::split(build_metadata, ".");
 		} else {
 			// Pre-release only
 			std::string pre_release = str.substr(hyphen_pos + 1, str.size() - hyphen_pos - 1);
-			this->pre_release = util::tokenize(pre_release, ".");
+			this->pre_release = util::split(pre_release, ".");
 		}
 	} else if (plus_pos != std::string::npos) {
 		// Build metadata only
 		std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
-		this->build_metadata = util::tokenize(build_metadata, ".");
+		this->build_metadata = util::split(build_metadata, ".");
 	}
 }
 
@@ -73,6 +73,30 @@ std::ostream &operator<<(std::ostream &lhs, const version &rhs) {
 	}
 
 	return lhs;
+}
+
+bool version::operator==(const version &rhs) const noexcept {
+	return compare(rhs) == 0;
+}
+
+bool version::operator!=(const version &rhs) const noexcept {
+	return compare(rhs) != 0;
+}
+
+bool version::operator<=(const version &rhs) const noexcept {
+	return compare(rhs) <= 0;
+}
+
+bool version::operator>=(const version &rhs) const noexcept {
+	return compare(rhs) >= 0;
+}
+
+bool version::operator<(const version &rhs) const noexcept {
+return compare(rhs) < 0;
+}
+
+bool version::operator>(const version &rhs) const noexcept {
+	return compare(rhs) > 0;
 }
 
 int32_t version::compare(const version &other) const noexcept {
@@ -126,28 +150,13 @@ int32_t version::compare(const version &other) const noexcept {
 	return 0;
 }
 
-bool version::operator==(const version &rhs) const noexcept {
-	return compare(rhs) == 0;
-}
+bool version::is_backward_compatible(const version &previous) const noexcept {
+	// Example use:
+	// provided_version.is_backward_compatible(required_version)
 
-bool version::operator!=(const version &rhs) const noexcept {
-	return compare(rhs) != 0;
-}
-
-bool version::operator<=(const version &rhs) const noexcept {
-	return compare(rhs) <= 0;
-}
-
-bool version::operator>=(const version &rhs) const noexcept {
-	return compare(rhs) >= 0;
-}
-
-bool version::operator<(const version &rhs) const noexcept {
-return compare(rhs) < 0;
-}
-
-bool version::operator>(const version &rhs) const noexcept {
-	return compare(rhs) > 0;
+	if (major != previous.major)
+		return false;
+	return previous < *this;
 }
 
 const std::vector<std::string> &version::get_pre_release() const noexcept {

@@ -10,7 +10,7 @@ class json;
 
 template<typename T>
 concept json_type =
-		std::is_same_v<T, std::nullptr_t>    ||
+		std::is_same_v<T, nullptr_t>    ||
 		std::is_same_v<T, bool> ||
 		std::is_same_v<T, double>  ||
 		std::is_same_v<T, std::string>  ||
@@ -19,29 +19,30 @@ concept json_type =
 
 class json {
 public:
-	using null = std::nullptr_t;
+	using null = nullptr_t;
 	using boolean = bool;
 	using number = double;
 	using string = std::string;
 	using array = std::vector<json>;
 	using object = std::unordered_map<std::string, json>;
 
-	json() = default;
+	json() noexcept = default;
 
-	json(null);
+	json(null) noexcept {}
 
 	template<std::same_as<json::boolean> Boolean>
-	json(Boolean value);
+	json(Boolean value) noexcept;
 
-	json(number value);
+	json(number value) noexcept;
 
-	json(const string &value);
+	template<string_type String>
+	json(const String &value);
 
-	json(string &&value);
+	json(string &&value) noexcept;
 
 	json(const array &value);
 
-	json(array &&value);
+	json(array &&value) noexcept;
 
 	json(const object &value);
 
@@ -57,9 +58,11 @@ public:
 
 	operator number &();
 
-	operator const string &() const;
+	template<string_type String>
+	operator const String &() const;
 
-	operator string &();
+	template<string_type String>
+	operator String &();
 
 	operator const array &() const;
 
@@ -68,6 +71,8 @@ public:
 	operator const object &() const;
 
 	operator object &();
+
+	friend std::ostream &operator<<(std::ostream &lhs, const json &rhs);
 
 	json &operator[](size_t index);
 
@@ -81,25 +86,22 @@ public:
 
 	bool operator==(const json &json) const = default;
 
-	static json from_string(std::string_view json);
+	static json parse(std::string_view json);
 
 	template<json_type T>
-	bool is() const;
+	inline bool is() const noexcept;
 
 	template<json_type T>
-	T &as();
+	inline T &as();
 
 	template<json_type T>
-	const T &as() const;
-
-	std::string to_string(uint8_t indent = 0) const;
+	inline const T &as() const;
 
 private:
-
 	std::variant<null, boolean, number, string, array, object> value;
-};
 
-std::ostream &operator<<(std::ostream &lhs, const json &rhs);
+	std::string to_string(uint8_t current_indent = 0) const;
+};
 
 }
 
