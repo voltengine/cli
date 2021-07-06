@@ -25,13 +25,13 @@ cmake --build build --target volt_cli --config Release
 volt help [{command}]
 
 # Get latest/specified Volt/package version (versions are Git tags; volt package refers Volt repo):
-volt install ({git-url} | {package-id}) [{version}]
+volt install {package-id} [{version}]
 
 # List installed packages:
 volt list
 
 # Describe remote package and show available versions:
-volt info ({git-url} | {package-id})
+volt info {package-id}
 
 # Search for remote packages by keywords in their names and descriptions:
 volt search {keywords}

@@ -16,16 +16,22 @@ int main(int argc, char **argv) {
 		
 		const auto &cmd = command_manager::find_command(name);
 		if (cmd) {
+			bool fail;
+
 			try {
-				if (!cmd->run(args)) {
-					std::cout << "Use '"
-							<< termcolor::bright_green << "volt"
-							<< termcolor::reset << " help "
-							<< cmd->name << "' to get help.\n";
-				}
+				fail = !cmd->run(args);
 			} catch (std::exception &e) {
-				std::cout << termcolor::bright_red << "Encountered exception:\n"
-						  << termcolor::reset << e.what() << "\n";
+				std::cout << termcolor::bright_red
+						  << "Encountered exception:\n" << e.what()
+						  << termcolor::reset << "\n";
+				fail = true;
+			}
+
+			if (fail) {
+				std::cout << "Use '"
+						  << termcolor::bright_green << "volt"
+						  << termcolor::reset << " help "
+						  << cmd->name << "' to get help.\n";
 			}
 		} else
 			std::cout << termcolor::bright_red << "No such command.\n"

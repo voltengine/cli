@@ -33,7 +33,7 @@ json &json::operator[](const Key &key) {
 
 template<string_type Key>
 const json &json::operator[](const Key &key) const {
-	return as<object>()[key];
+	return as<object>().at(key);
 }
 
 template<json_type T>

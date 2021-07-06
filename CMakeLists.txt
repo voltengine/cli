@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(volt_cli VERSION 1.0.0 LANGUAGES CXX)
+project(VoltCLI VERSION 0.1.0 LANGUAGES CXX)
 
 # Set output directory to "${CMAKE_BINARY_DIR}/bin"
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -10,9 +10,10 @@ endforeach()
 
 # Find Conan packages
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
+find_package(CURL REQUIRED)
+find_package(libsodium REQUIRED)
 find_package(RapidJSON REQUIRED)
 find_package(termcolor REQUIRED)
-find_package(libgit2 REQUIRED)
 
 file(GLOB_RECURSE TARGET_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
@@ -20,23 +21,24 @@ file(GLOB_RECURSE TARGET_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.inl"
 )
 
-add_executable(volt_cli ${TARGET_SOURCES})
+add_executable(VoltCLI ${TARGET_SOURCES})
 
-set_target_properties(volt_cli PROPERTIES
+set_target_properties(VoltCLI PROPERTIES
     CXX_STANDARD 20
     OUTPUT_NAME "volt"
 )
 
-target_include_directories(volt_cli PRIVATE
+target_include_directories(VoltCLI PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_link_libraries(volt_cli PRIVATE
+target_link_libraries(VoltCLI PRIVATE
+    CURL::CURL
+    libsodium::libsodium
     RapidJSON::RapidJSON
     termcolor::termcolor
-    libgit2::libgit2
 )
 
-target_precompile_headers(volt_cli PRIVATE
+target_precompile_headers(VoltCLI PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/pch.hpp"
 )

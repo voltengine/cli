@@ -164,7 +164,7 @@ const std::vector<std::string> &version::get_pre_release() const noexcept {
 }
 
 void version::set_pre_release(const std::vector<std::string> &pre_release) {
-	static const std::regex validator("[0-9A-Za-z-]");
+	static const std::regex validator("[0-9A-Za-z-]+");
 
 	for (const std::string &identifier : pre_release) {
 		bool is_numeric = std::all_of(identifier.begin(),
@@ -188,7 +188,7 @@ const std::vector<std::string> &version::get_build_metadata() const noexcept {
 }
 
 void version::set_build_metadata(const std::vector<std::string> &build) {
-	static const std::regex validator("[0-9A-Za-z-]");
+	static const std::regex validator("[0-9A-Za-z-]+");
 
 	for (std::string &identifier : build_metadata) {
 		if (identifier.empty() || !std::regex_match(identifier, validator)) {

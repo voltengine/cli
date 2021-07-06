@@ -26,6 +26,8 @@ public:
 	using array = std::vector<json>;
 	using object = std::unordered_map<std::string, json>;
 
+	using error = std::runtime_error;
+
 	json() noexcept = default;
 
 	json(null) noexcept {}

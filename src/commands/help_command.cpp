@@ -12,7 +12,7 @@ help_command::help_command() : command(
 
 bool help_command::run(const std::vector<std::string> &args) const {
 	if (args.size() == 0) {
-		std::cout << termcolor::bright_green << "Volt CLI 1.0.0\n\n"
+		std::cout << termcolor::bright_green << "Volt CLI 0.1.0\n\n"
 				  << termcolor::reset << "Available commands:\n";
 
 		for (const auto &cmd : command_manager::get_commands()) {

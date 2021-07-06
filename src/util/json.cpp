@@ -58,7 +58,15 @@ const json &json::operator[](size_t index) const {
 
 json json::parse(std::string_view json) {
 	Document document;
-	document.Parse(json.data());
+
+	ParseResult result = document.Parse(json.data());
+	if (!result) {
+		throw error(GetParseError_En(result.Code())
+				+ std::string(" (")
+				+ std::to_string(result.Offset())
+				+ ')');
+	}
+
 	return parse_rapidjson_value(&document);
 }
 

@@ -68,6 +68,27 @@
 		"xtree": "cpp",
 		"numeric": "cpp",
 		"random": "cpp",
-		"fstream": "cpp"
+		"fstream": "cpp",
+		"clocale": "cpp",
+		"csignal": "cpp",
+		"cstdarg": "cpp",
+		"cwctype": "cpp",
+		"any": "cpp",
+		"array": "cpp",
+		"bitset": "cpp",
+		"codecvt": "cpp",
+		"complex": "cpp",
+		"condition_variable": "cpp",
+		"coroutine": "cpp",
+		"deque": "cpp",
+		"functional": "cpp",
+		"future": "cpp",
+		"mutex": "cpp",
+		"optional": "cpp",
+		"set": "cpp",
+		"shared_mutex": "cpp",
+		"thread": "cpp",
+		"typeindex": "cpp",
+		"*.ipp": "cpp"
 	}
 }
