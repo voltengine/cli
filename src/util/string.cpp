@@ -40,6 +40,23 @@ std::string to_string(double value, bool trim_zeros, int32_t precision) {
 	return format_fp(value, trim_zeros, precision);
 }
 
+void ltrim(std::string &str) {
+	auto end = std::find_if(str.begin(), str.end(),
+			[](char c) { return !std::isspace(c); });
+	str.erase(str.begin(), end);
+}
+
+void rtrim(std::string &str) {
+	auto begin = std::find_if(str.rbegin(), str.rend(),
+			[](char c) { return !std::isspace(c); }).base();
+    str.erase(begin, str.end());
+}
+
+void trim(std::string &str) {
+	ltrim(str);
+	rtrim(str);
+}
+
 std::vector<std::string> split(std::string_view str,
 		std::string_view delimiter, bool skip_empty) {
 	std::vector<std::string> tokens;
@@ -53,6 +70,15 @@ std::vector<std::string> split(std::string_view str,
 	}
 
 	return tokens;
+}
+
+void replace(std::string &str, std::string_view from, std::string_view to) {
+	size_t pos = 0;
+
+	while((pos = str.find(from, pos)) != std::string::npos) {
+		str.replace(pos, from.size(), to);
+		pos += to.size();
+	}
 }
 
 }

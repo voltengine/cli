@@ -15,7 +15,7 @@ concept json_type =
 		std::is_same_v<T, double>  ||
 		std::is_same_v<T, std::string>  ||
 		std::is_same_v<T, std::vector<json>>   ||
-		std::is_same_v<T, std::unordered_map<std::string, json>>;
+		std::is_same_v<T, std::map<std::string, json>>;
 
 class json {
 public:
@@ -24,7 +24,7 @@ public:
 	using number = double;
 	using string = std::string;
 	using array = std::vector<json>;
-	using object = std::unordered_map<std::string, json>;
+	using object = std::map<std::string, json>;
 
 	using error = std::runtime_error;
 

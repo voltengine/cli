@@ -20,11 +20,10 @@ bool info_command::run(const std::vector<std::string> &args) const {
 		return false;
 	}
 
-	static const std::regex package_name_validator("[0-9a-z-]+");
+	static std::regex package_name_validator("[0-9a-z-]+");
 
 	std::string package_name = args[0];
-	std::string git_url;
-	std::string info_url;
+	std::string package_url;
 
 	if (!std::regex_match(args[0], package_name_validator)) {
 		std::cout << termcolor::bright_red
@@ -48,8 +47,7 @@ bool info_command::run(const std::vector<std::string> &args) const {
 		url += "packages/" + args[0] + ".json";
 		try {
 			json package = json::parse(util::download(url, volt_path / "cacert.pem"));
-			git_url = package["git"].as<json::string>();
-			info_url = package["info"].as<json::string>();
+			package_url = package["url"].as<json::string>();
 			break;
 		} catch (std::exception &e) {
 			std::cout << termcolor::bright_red
@@ -58,14 +56,14 @@ bool info_command::run(const std::vector<std::string> &args) const {
 		}
 	}
 
-	if (git_url.empty()) {
+	if (package_url.empty()) {
 		std::cout << termcolor::bright_red
 				  << "Package not found in archives.\n"
 				  << termcolor::reset;
 		return true;
 	}
 
-	json info = json::parse(util::download(info_url, volt_path / "cacert.pem"));
+	json info = json::parse(util::download(package_url, volt_path / "cacert.pem"));
 
 	std::cout << '\n' << info["title"].as<json::string>()
 			  << " (" << termcolor::bright_green
@@ -75,7 +73,7 @@ bool info_command::run(const std::vector<std::string> &args) const {
 			  << info["publisher"].as<json::string>() << '\n';
 
 	std::cout << termcolor::bright_green << "\nGit URL:\n"
-			  << termcolor::reset << git_url << '\n';
+			  << termcolor::reset << info["git"].as<json::string>() << '\n';
 
 	if (info.as<json::object>().contains("description")) {
 		std::cout << termcolor::bright_green << "\nDescription:\n"

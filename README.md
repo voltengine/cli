@@ -24,12 +24,6 @@ cmake --build build --target volt_cli --config Release
 # Command help and version info:
 volt help [{command}]
 
-# Get latest/specified package version (versions are Git tags):
-volt install {package-id} [{version}]
-
-# Remove all/specified package version(s) (versions are Git tags):
-volt remove {package-id} [{version}]
-
 # List installed packages:
 volt list
 
@@ -39,14 +33,23 @@ volt info {package-id}
 # Search for remote packages by keywords:
 volt search {keywords}
 
-# Create a package:
-volt init # ask for: name, version, engineVersion, displayName, description, publisher
+# Get latest/specified package version (versions are Git tags):
+volt install {package-id} [{version}]
 
-# Build editor DLLs or generate shipping files:
-volt build [{platform}]
+# Remove all/specified package version(s) (versions are Git tags):
+volt remove {package-id} [{version}]
+
+# Create a package:
+volt init # ask for: id, title, publisher, description
+
+# Set a dependency (install if not cached):
+volt depend {package-id} [{version}]
 
 # Build and run the editor:
 volt edit
+
+# Build the editor and execute headless build:
+volt build [{platform}]
 
 # + Future dependency management and package deployment.
 ```

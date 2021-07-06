@@ -23,8 +23,9 @@ bool search_command::run(const std::vector<std::string> &args) const {
 		return false;
 	}
 
-	// ID + description
-	std::unordered_map<std::string, std::string> packages;
+	// ID : title + version + description
+	std::unordered_map<std::string, std::tuple<
+			std::string, std::string, std::string>> packages;
 
 	fs::path volt_path(std::getenv("VOLT_PATH"));
 	json archives_json = json::parse(util
@@ -75,20 +76,32 @@ bool search_command::run(const std::vector<std::string> &args) const {
 				if (!packages.contains(package_id)) {
 					std::string package_url = url + "packages/" + package_id + ".json";
 					json package = json::parse(util::download(package_url, volt_path / "cacert.pem"));
-					std::string info_url = package["info"].as<json::string>();
-					json info = json::parse(util::download(info_url, volt_path / "cacert.pem"));
-					packages[package_id] = info["description"].as<json::string>();
+					package_url = package["url"].as<json::string>();
+					package = json::parse(util::download(package_url, volt_path / "cacert.pem"));
+					packages[package_id] = std::make_tuple(
+						package["title"].as<json::string>(),
+						package["version"].as<json::string>(),
+						package["description"].as<json::string>()
+					);
 				}
 			}
 		}
+	}
+
+	if (packages.size() == 0) {
+		std::cout << termcolor::bright_red << "\nNo packages have been found.\n"
+				  << termcolor::reset;
+		return true;
 	}
 
 	std::cout << "\nFound " << packages.size()
 			  << (packages.size() == 1 ? " package:\n" : " packages:\n");
 
 	for (auto &package : packages) {
-		std::cout << '\n' << termcolor::bright_green << package.first
-				  << '\n' << termcolor::reset << package.second << '\n';
+		std::cout << '\n' << std::get<0>(package.second) << " ("
+				  << termcolor::bright_green << package.first
+				  << termcolor::reset << ") " << std::get<1>(package.second)
+				  << '\n' << std::get<2>(package.second) << '\n';
 	}
 
 	return true;

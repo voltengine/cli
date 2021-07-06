@@ -149,7 +149,7 @@ static json parse_rapidjson_value(Value::ConstValueIterator value) {
 
 		Value::ConstObject json_object = value->GetObject();
 		json::object &object = json.as<json::object>();
-		object.reserve(json_object.MemberCount());
+		// object.reserve(json_object.MemberCount());
 
 		for (Value::ConstMemberIterator it = json_object.MemberBegin(); it != json_object.MemberEnd(); it++)
 			object.emplace(it->name.GetString(), parse_rapidjson_value(&it->value));

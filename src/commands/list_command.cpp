@@ -65,7 +65,7 @@ bool list_command::run(const std::vector<std::string> &args) const {
 	}
 
 	std::cout << "Found " << packages.size() <<
-			(packages.size() == 1 ? " package" : " packages") << ":\n\n";
+			(packages.size() == 1 ? " installed package" : " installed packages") << ":\n\n";
 
 	for (package &pkg : packages) {
 		std::cout << termcolor::bright_green << pkg.id << '\n'

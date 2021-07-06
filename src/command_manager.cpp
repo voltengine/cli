@@ -2,6 +2,7 @@
 
 #include "commands/help_command.hpp"
 #include "commands/info_command.hpp"
+#include "commands/init_command.hpp"
 #include "commands/list_command.hpp"
 #include "commands/search_command.hpp"
 
@@ -10,11 +11,12 @@ using namespace commands;
 void command_manager::init() {
 	commands["help"] = std::make_shared<help_command>();
 	commands["info"] = std::make_shared<info_command>();
+	commands["init"] = std::make_shared<init_command>();
 	commands["list"] = std::make_shared<list_command>();
 	commands["search"] = std::make_shared<search_command>();
 }
 
-const std::unordered_map<std::string, std::shared_ptr<
+const std::map<std::string, std::shared_ptr<
 		const command>> &command_manager::get_commands() noexcept {
 	return commands;
 }
@@ -28,5 +30,5 @@ std::shared_ptr<const command> command_manager::
 	
 }
 
-std::unordered_map<std::string, std::shared_ptr<
+std::map<std::string, std::shared_ptr<
 		const command>> command_manager::commands;

@@ -22,6 +22,7 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <optional>
@@ -29,6 +30,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
