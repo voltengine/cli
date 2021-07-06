@@ -1,4 +1,4 @@
-#include "commands/list_command.hpp"
+#include "list_command.hpp"
 
 #include "util/file.hpp"
 #include "util/json.hpp"

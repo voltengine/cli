@@ -11,10 +11,11 @@ std::string sha256(std::string_view str) {
 			str.size());
 
 	std::string hex;
-	hex.resize(64);
+	hex.resize(65);
 	sodium_bin2hex(
 			hex.data(), hex.size(),
 			buffer.data(), buffer.size());
+	hex.resize(64);
 
 	return hex;
 }

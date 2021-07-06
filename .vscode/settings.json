@@ -1,6 +1,6 @@
 {
 	"cmake.debugConfig": {
-        "args": ["info", "volt"]
+        "args": ["search", "volt"]
     },
 	"files.associations": {
 		"*.fsh": "glsl",

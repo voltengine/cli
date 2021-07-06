@@ -1,4 +1,4 @@
-#include "commands/help_command.hpp"
+#include "help_command.hpp"
 
 #include "command_manager.hpp"
 

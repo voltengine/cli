@@ -1,13 +1,10 @@
-#include "commands/info_command.hpp"
+#include "info_command.hpp"
 
-#include "util/crypto.hpp"
 #include "util/file.hpp"
 #include "util/json.hpp"
 
 namespace fs = std::filesystem;
 using namespace util;
-
-static json get_search_index(size_t index);
 
 namespace commands {
 
@@ -15,11 +12,6 @@ info_command::info_command() : command(
 		"info",
 		"{package-id}",
 		"Shows detailed information about a package.") {}
-
-static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-	std::cout << termcolor::bright_green << std::string(ptr, size * nmemb) << termcolor::reset;
-	return size * nmemb;
-}
 
 bool info_command::run(const std::vector<std::string> &args) const {
 	if (args.size() == 0) {
@@ -109,33 +101,3 @@ bool info_command::run(const std::vector<std::string> &args) const {
 }
 
 }
-
-// json get_search_index(size_t index, std::string_view url) {
-// 	fs::path volt_path(std::getenv("VOLT_PATH"));
-
-// 	std::string index_filename = "archives/" + std::to_string(index) + ".json";
-// 	fs::path index_path = volt_path / index_filename;
-// 	fs::path hash_path = volt_path / (index_filename + ".sha256");
-
-// 	std::string local_index = util::read_file(index_path);
-// 	std::string local_hash = util::read_file(hash_path);
-
-// 	std::string index_url = std::string(url) + "packages.json";
-// 	std::string hash_url = index_url + ".sha256";
-
-// 	http::buffer buffer = http::download(hash_url, volt_path / "cacert.pem");
-// 	std::string remote_hash(buffer.begin(), buffer.end());
-
-// 	if (local_hash != remote_hash ||
-// 			util::sha256(local_index) != local_hash) {
-// 		std::cout << "Search index '" << url << "' is out-dated. Fetching...\n";
-
-// 		buffer = http::download(index_url, volt_path / "cacert.pem");
-// 		std::string remote_index(buffer.begin(), buffer.end());
-
-// 		util::write_file(index_path, local_index = remote_index);
-// 		util::write_file(hash_path, local_hash = remote_hash);
-// 	}
-
-// 	return json::parse(local_index);
-// }
