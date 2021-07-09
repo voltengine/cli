@@ -17,7 +17,12 @@ list_command::list_command() : command(
 		"",
 		"Displays installed packages.") {}
 
-bool list_command::run(const std::vector<std::string> &args) const {
+void list_command::run(const std::vector<std::string> &args) const {
+	if (args.size() > 0) {
+		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+				  << termcolor::reset;
+	}
+
 	fs::path packages_path = std::getenv("VOLT_PATH") / fs::path("packages/");
 	std::vector<package> packages;
 
@@ -61,7 +66,7 @@ bool list_command::run(const std::vector<std::string> &args) const {
 	if (packages.size() == 0) {
 		std::cout << termcolor::bright_red << "No packages are installed.\n"
 				  << termcolor::reset;
-		return true;
+		return;
 	}
 
 	std::cout << "Found " << packages.size() <<
@@ -75,7 +80,7 @@ bool list_command::run(const std::vector<std::string> &args) const {
 			std::cout << '\t' << version << '\n';
 	}
 
-	return true;
+	return;
 }
 
 }

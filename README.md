@@ -27,23 +27,29 @@ volt help [{command}]
 # List installed packages:
 volt list
 
-# Describe remote package and show available versions:
-volt info {package-id}
+# Describe current/remote package and show available versions:
+volt info [{package-id}]
 
 # Search for remote packages by keywords:
 volt search {keywords}
 
-# Get latest/specified package version (versions are Git tags):
-volt install {package-id} [{version}]
-
-# Remove all/specified package version(s) (versions are Git tags):
-volt remove {package-id} [{version}]
-
-# Create a package:
+# Generate 'package.json':
 volt init # ask for: id, title, publisher, description
 
-# Set a dependency (install if not cached):
-volt depend {package-id} [{version}]
+# Add current version to releases in 'manifest.json' or generate manifest if it it's not present.
+volt release
+
+# Add current version to releases in 'manifest.json' or synchronize manifest (title, description, license, etc.) with 'package.json'. Generate JSON file if it's missing.
+volt manifest (release | sync)
+
+# Validate ./package.json and check for dependency collisions and download missing components.
+volt install
+
+# Get latest/specified package version (versions are Git tags):
+# volt install {package-id} [{version}]
+
+# Remove all/specified package version(s) (versions are Git tags):
+# volt remove {package-id} [{version}]
 
 # Build and run the editor:
 volt edit

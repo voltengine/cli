@@ -10,7 +10,7 @@ help_command::help_command() : command(
 		"Prints version info and available commands.\n"
 		"Can optionally provide detailed help for a specific command.") {}
 
-bool help_command::run(const std::vector<std::string> &args) const {
+void help_command::run(const std::vector<std::string> &args) const {
 	if (args.size() == 0) {
 		std::cout << termcolor::bright_green << "Volt CLI 0.1.0\n\n"
 				  << termcolor::reset << "Available commands:\n";
@@ -20,6 +20,11 @@ bool help_command::run(const std::vector<std::string> &args) const {
 					  << termcolor::reset << cmd.first << "\n";
 		}
 	} else {
+		if (args.size() > 1) {
+			std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+					  << termcolor::reset;
+		}
+
 		const auto &cmd = command_manager::find_command(args[0]);
 
 		std::cout << "Usage:\n";
@@ -29,8 +34,6 @@ bool help_command::run(const std::vector<std::string> &args) const {
 		std::cout << "Description:\n";
 		std::cout << cmd->description << "\n";
 	}
-
-	return true;
 }
 
 }

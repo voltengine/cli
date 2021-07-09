@@ -6,9 +6,9 @@
 
 namespace commands {
 
-class search_command : public command {
+class manifest_command : public command {
 public:
-	search_command();
+	manifest_command();
 
 	void run(const std::vector<std::string> &args) const override;
 };

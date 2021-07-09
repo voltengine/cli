@@ -1,5 +1,6 @@
 #include "pch.hpp"
 
+#include "util/file.hpp"
 #include "command_manager.hpp"
 
 int main(int argc, char **argv) {
@@ -16,22 +17,12 @@ int main(int argc, char **argv) {
 		
 		const auto &cmd = command_manager::find_command(name);
 		if (cmd) {
-			bool fail;
-
 			try {
-				fail = !cmd->run(args);
+				cmd->run(args);
 			} catch (std::exception &e) {
 				std::cout << termcolor::bright_red
-						  << "Encountered exception:\n" << e.what()
-						  << termcolor::reset << "\n";
-				fail = true;
-			}
-
-			if (fail) {
-				std::cout << "Use '"
-						  << termcolor::bright_green << "volt"
-						  << termcolor::reset << " help "
-						  << cmd->name << "' to get help.\n";
+						  << '\n' << e.what() << '\n'
+						  << termcolor::reset;
 			}
 		} else
 			std::cout << termcolor::bright_red << "No such command.\n"

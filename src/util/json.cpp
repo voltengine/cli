@@ -28,6 +28,14 @@ json::operator number &() {
 	return as<number>();
 }
 
+json::operator const string &() const {
+	return as<string>();
+}
+
+json::operator string &() {
+	return as<string>();
+}
+
 json::operator const array &() const {
 	return as<array>();
 }

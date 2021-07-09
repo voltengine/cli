@@ -20,7 +20,7 @@ version::version(const std::string &str) {
 			"\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
 
 	if (!std::regex_match(str, validator))
-		throw std::invalid_argument("String is not a valid semantic version.");
+		throw std::invalid_argument("String is not a valid semantic version: " + str);
 
 	size_t dot1_pos = str.find('.');
 	size_t dot2_pos = str.find('.', dot1_pos + 2);
@@ -101,7 +101,7 @@ bool version::operator>(const version &rhs) const noexcept {
 
 int32_t version::compare(const version &other) const noexcept {
 	if (major != other.major)
-		return minor > other.minor ? 1 : -1;
+		return major > other.major ? 1 : -1;
 	
 	if (minor != other.minor)
 		return minor > other.minor ? 1 : -1;

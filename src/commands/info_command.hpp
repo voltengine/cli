@@ -10,7 +10,7 @@ class info_command : public command {
 public:
 	info_command();
 
-	bool run(const std::vector<std::string> &args) const override;
+	void run(const std::vector<std::string> &args) const override;
 };
 
 }

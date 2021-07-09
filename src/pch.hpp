@@ -17,6 +17,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -28,8 +29,8 @@
 #include <optional>
 #include <regex>
 #include <sstream>
+#include <stack>
 #include <string>
-#include <thread>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -37,7 +38,7 @@
 #include <vector>
 
 #include <curl/curl.h>
-#include <sodium.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/document.h>
+#include <sodium.h>
 #include <termcolor/termcolor.hpp>

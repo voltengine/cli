@@ -60,11 +60,9 @@ public:
 
 	operator number &();
 
-	template<string_type String>
-	operator const String &() const;
+	operator const string &() const;
 
-	template<string_type String>
-	operator String &();
+	operator string &();
 
 	operator const array &() const;
 

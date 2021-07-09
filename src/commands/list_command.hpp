@@ -10,7 +10,7 @@ class list_command : public command {
 public:
 	list_command();
 
-	bool run(const std::vector<std::string> &args) const override;
+	void run(const std::vector<std::string> &args) const override;
 };
 
 }

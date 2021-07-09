@@ -15,17 +15,38 @@ init_command::init_command() : command(
 		"",
 		"Initializes package.json in current directory.") {}
 
-bool init_command::run(const std::vector<std::string> &args) const {
+void init_command::run(const std::vector<std::string> &args) const {
+	if (args.size() > 0) {
+		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+				  << termcolor::reset;
+	}
+
 	fs::path current_path = fs::current_path();
 	std::string id, title, git, publisher, description, license;
 
+	static std::regex id_validator("[0-9a-z-]+");
+	std::string default_id = current_path.filename().string();
+	std::transform(default_id.begin(), default_id.end(), default_id.begin(), ::tolower);
+	util::replace(default_id, " ", "-");
+	if (!std::regex_match(default_id, id_validator))
+		default_id = "";
+
 	while (true) {
-		std::cout << termcolor::bright_green << "ID: " << termcolor::reset;
+		if (default_id.empty()) {
+			std::cout << termcolor::bright_green << "ID: "
+					  << termcolor::reset;
+		} else {
+			std::cout << termcolor::bright_green << "ID ("
+					<< termcolor::reset << default_id
+					<< termcolor::bright_green << "): "
+					<< termcolor::reset;
+		}
 		std::getline(std::cin, id);
 
-		static std::regex validator("[0-9a-z-]+");
-		
-		if (std::regex_match(id, validator))
+		if (id.empty()) {
+			if (!default_id.empty())
+				break;
+		} else if (std::regex_match(id, id_validator))
 			break;
 
 		std::cout << termcolor::bright_red
@@ -33,8 +54,8 @@ bool init_command::run(const std::vector<std::string> &args) const {
 				<< termcolor::reset;
 	}
 
-	std::string default_git = "file:///" + current_path.string() + ".git";
-	util::replace(default_git, "\\", "/");
+	if (id.empty())
+		id = default_id;
 
 	auto id_words = util::split(id, "-", true);
 	std::string default_title;
@@ -48,6 +69,12 @@ bool init_command::run(const std::vector<std::string> &args) const {
 			  << termcolor::reset;
 	std::getline(std::cin, title);
 
+	std::string current_path_str = current_path.string();
+#if _WIN32
+	util::replace(current_path_str, "\\", "/");
+#endif
+	std::string default_git = "file:///" + current_path_str + '/';
+
 	while (true) {
 		std::cout << termcolor::bright_green << "Git URL ("
 				  << termcolor::reset << default_git
@@ -58,13 +85,13 @@ bool init_command::run(const std::vector<std::string> &args) const {
 		if (git.empty())
 			git = default_git;
 
-		static std::regex validator("(http:\\/|https:\\/|file:\\/\\/)(\\/\\S+)+\\.git");
+		static std::regex validator("(http:\\/|https:\\/|file:\\/\\/)(\\/\\S+)+");
 		
 		if (std::regex_match(git, validator))
 			break;
 
 		std::cout << termcolor::bright_red
-				<< "Invalid Git URL.\n"
+				<< "Invalid URL.\n"
 				<< termcolor::reset;
 	}
 
@@ -91,7 +118,7 @@ bool init_command::run(const std::vector<std::string> &args) const {
 	if (publisher.empty())
 		publisher = "Megadodo Publications";
 	if (description.empty())
-		description = "The answer to The Ultimate Question of Life, the Universe, and Everything.";
+		description = "The answer to the Ultimate Question of Life, the Universe, and Everything.";
 	if (license.empty())
 		license = "MIT";
 
@@ -112,8 +139,6 @@ bool init_command::run(const std::vector<std::string> &args) const {
 
 	std::cout << termcolor::bright_green << "\nFile has been written:\n"
 			  << termcolor::reset << package_path.string() << '\n';
-
-	return true;
 }
 
 }

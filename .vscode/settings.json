@@ -1,6 +1,6 @@
 {
 	"cmake.debugConfig": {
-        "args": ["search", "volt"]
+        "args": ["info", "volt"]
     },
 	"files.associations": {
 		"*.fsh": "glsl",
@@ -89,6 +89,8 @@
 		"shared_mutex": "cpp",
 		"thread": "cpp",
 		"typeindex": "cpp",
-		"*.ipp": "cpp"
+		"*.ipp": "cpp",
+		"queue": "cpp",
+		"stack": "cpp"
 	}
 }

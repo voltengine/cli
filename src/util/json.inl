@@ -16,16 +16,6 @@ json::operator Boolean &() {
 	return as<boolean>();
 }
 
-template<string_type String>
-json::operator const String &() const {
-	return as<string>();
-}
-
-template<string_type String>
-json::operator String &() {
-	return as<string>();
-}
-
 template<string_type Key>
 json &json::operator[](const Key &key) {
 	return as<object>()[key];
@@ -43,13 +33,15 @@ bool json::is() const noexcept {
 
 template<json_type T>
 T &json::as() {
-	assert(is<T>() && "Bad JSON type.");
+	if (!is<T>())
+		throw std::runtime_error("Bad JSON type.");
 	return std::get<T>(value);
 }
 
 template<json_type T>
 const T &json::as() const {
-	assert(is<T>() && "Bad JSON type.");
+	if (!is<T>())
+		throw std::runtime_error("Bad JSON type.");
 	return std::get<T>(value);
 }
 

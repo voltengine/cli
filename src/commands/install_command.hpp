@@ -6,9 +6,9 @@
 
 namespace commands {
 
-class search_command : public command {
+class install_command : public command {
 public:
-	search_command();
+	install_command();
 
 	void run(const std::vector<std::string> &args) const override;
 };

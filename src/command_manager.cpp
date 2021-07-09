@@ -3,6 +3,7 @@
 #include "commands/help_command.hpp"
 #include "commands/info_command.hpp"
 #include "commands/init_command.hpp"
+#include "commands/install_command.hpp"
 #include "commands/list_command.hpp"
 #include "commands/search_command.hpp"
 
@@ -12,6 +13,7 @@ void command_manager::init() {
 	commands["help"] = std::make_shared<help_command>();
 	commands["info"] = std::make_shared<info_command>();
 	commands["init"] = std::make_shared<init_command>();
+	// commands["install"] = std::make_shared<install_command>();
 	commands["list"] = std::make_shared<list_command>();
 	commands["search"] = std::make_shared<search_command>();
 }
