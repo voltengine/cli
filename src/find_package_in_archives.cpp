@@ -13,7 +13,7 @@ json find_package_in_archives(std::string_view id) {
 		throw std::runtime_error("Invalid package name.");
 	}
 
-	std::string manifest_url;
+	json package;
 
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
@@ -31,8 +31,7 @@ json find_package_in_archives(std::string_view id) {
 
 		url += "packages/" + std::string(id) + ".json";
 		try {
-			json package = json::parse(util::download(url, cert_path));
-			manifest_url = package["manifest"].as<json::string>();
+			package = json::parse(util::download(url, cert_path));
 			break;
 		} catch (std::exception &e) {
 			std::cout << termcolor::bright_yellow
@@ -41,8 +40,8 @@ json find_package_in_archives(std::string_view id) {
 		}
 	}
 
-	if (manifest_url.empty())
+	if (package.is<json::null>())
 		throw std::runtime_error("Package not found in archives.");
 
-	return json::parse(util::download(manifest_url, cert_path));
+	return package;
 }

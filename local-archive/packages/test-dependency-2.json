@@ -1,4 +1,11 @@
 {
-	"keywords": [],
-	"manifest": "file:///D:/Library/Source/volt-cli/local-packages/test-dependency-2/manifest.json"
+	"description": "The answer to the Ultimate Question of Life, the Universe, and Everything.",
+	"git": "file:///D:/Library/Source/volt-cli/local-packages/test-dependency-2/",
+	"id": "test-dependency-2",
+	"license": "MIT",
+	"publisher": "Megadodo Publications",
+	"releaseDependencies": {
+		"0.1.0": []
+	},
+	"title": "Test Dependency 2"
 }

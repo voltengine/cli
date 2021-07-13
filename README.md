@@ -36,11 +36,8 @@ volt search {keywords}
 # Generate 'package.json':
 volt init # ask for: id, title, publisher, description
 
-# Add current version to releases in 'manifest.json' or generate manifest if it it's not present.
-volt release
-
-# Add current version to releases in 'manifest.json' or synchronize manifest (title, description, license, etc.) with 'package.json'. Generate JSON file if it's missing.
-volt manifest (release | sync)
+# Submits 'package.json' to volt archive using '.volt/credentials.json'. Archive updates appropriate manifest if token is valid.
+volt release {secret-token}
 
 # Validate ./package.json and check for dependency collisions and download missing components.
 volt install
