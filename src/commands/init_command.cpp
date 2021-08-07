@@ -1,4 +1,4 @@
-#include "init_command.hpp"
+#include "commands.hpp"
 
 #include "util/file.hpp"
 #include "util/json.hpp"
@@ -6,6 +6,7 @@
 #include "command_manager.hpp"
 
 namespace fs = std::filesystem;
+namespace tc = termcolor;
 using namespace util;
 
 namespace commands {
@@ -17,106 +18,129 @@ init_command::init_command() : command(
 
 void init_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
-		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
-				  << termcolor::reset;
+		std::cout << tc::bright_yellow << "Ignoring extra arguments.\n"
+				  << tc::reset;
 	}
 
 	fs::path current_path = fs::current_path();
-	std::string id, title, git, publisher, description, license;
+	std::string scope, name, git, description, license;
 
-	static std::regex id_validator("[0-9a-z-]+");
-	std::string default_id = current_path.filename().string();
-	std::transform(default_id.begin(), default_id.end(), default_id.begin(), ::tolower);
-	util::replace(default_id, " ", "-");
-	if (!std::regex_match(default_id, id_validator))
-		default_id = "";
+	std::string default_scope;
+	util::shell("git config user.name", [&default_scope](std::string_view data) {
+		default_scope += data;
+	});
+	default_scope.pop_back(); // Pop newline
+
+	std::transform(default_scope.begin(), default_scope.end(),
+			default_scope.begin(), ::tolower);
+
+	static const std::regex scope_validator(
+			"(?=^.{1,39}$)^[a-z\\d]+(-[a-z\\d]+)*$");
+	if (!std::regex_match(default_scope, scope_validator))
+		default_scope = "";
 
 	while (true) {
-		if (default_id.empty()) {
-			std::cout << termcolor::bright_green << "ID: "
-					  << termcolor::reset;
+		if (default_scope.empty()) {
+			std::cout << tc::bright_green << "Scope: "
+					  << tc::reset;
 		} else {
-			std::cout << termcolor::bright_green << "ID ("
-					<< termcolor::reset << default_id
-					<< termcolor::bright_green << "): "
-					<< termcolor::reset;
+			std::cout << tc::bright_green << "Scope ("
+					  << tc::reset << default_scope
+					  << tc::bright_green << "): "
+					  << tc::reset;
 		}
-		std::getline(std::cin, id);
+		std::getline(std::cin, scope);
 
-		if (id.empty()) {
-			if (!default_id.empty())
+		if (scope.empty()) {
+			if (!default_scope.empty())
 				break;
-		} else if (std::regex_match(id, id_validator))
+		} else if (std::regex_match(scope, scope_validator))
 			break;
 
-		std::cout << termcolor::bright_red
-				<< "Package ID must comprise only lowercase alphanumerics and hyphens.\n"
-				<< termcolor::reset;
+		std::cout << tc::bright_red
+				<< "Package scope must be a valid GitHub user/organization name. "
+				"You must be organization's administrator to publish packages in its scope.\n"
+				<< tc::reset;
 	}
 
-	if (id.empty())
-		id = default_id;
-
-	auto id_words = util::split(id, "-", true);
-	std::string default_title;
-	for (std::string &word : id_words)
-		default_title += static_cast<char>(std::toupper(word[0])) + word.substr(1) + ' ';
-	default_title.pop_back();
+	if (scope.empty())
+		scope = default_scope;
 	
-	std::cout << termcolor::bright_green << "Title ("
-			  << termcolor::reset << default_title
-			  << termcolor::bright_green << "): "
-			  << termcolor::reset;
-	std::getline(std::cin, title);
+	std::string default_name = current_path.filename().string();
+	std::transform(default_name.begin(), default_name.end(),
+			default_name.begin(), ::tolower);
+	util::replace(default_name, " ", "-");
 
-	std::string current_path_str = current_path.string();
-#if _WIN32
-	util::replace(current_path_str, "\\", "/");
-#endif
-	std::string default_git = "file:///" + current_path_str + '/';
+	static const std::regex name_validator(
+			"(?=^.{1,64}$)^[a-z][a-z\\d]*(-[a-z\\d]+)*$");
+	if (!std::regex_match(default_name, name_validator))
+		default_name = "";
 
 	while (true) {
-		std::cout << termcolor::bright_green << "Git URL ("
-				  << termcolor::reset << default_git
-				  << termcolor::bright_green << "): "
-				  << termcolor::reset;
+		if (default_name.empty()) {
+			std::cout << tc::bright_green << "Name: "
+					  << tc::reset;
+		} else {
+			std::cout << tc::bright_green << "Name ("
+					  << tc::reset << default_name
+					  << tc::bright_green << "): "
+					  << tc::reset;
+		}
+		std::getline(std::cin, name);
+
+		if (name.empty()) {
+			if (!default_name.empty())
+				break;
+		} else if (std::regex_match(name, name_validator))
+			break;
+
+		std::cout << tc::bright_red
+				<< "Package name must comprise only lowercase alphanumeric strings "
+				"separated with single hyphens. Name must not start with a digit.\n"
+				<< tc::reset;
+	}
+
+	if (name.empty())
+		name = default_name;
+
+	std::string default_git = "https://github.com/" + scope + '/' + name + ".git";
+	while (true) {
+		std::cout << tc::bright_green << "Git URL ("
+				  << tc::reset << default_git
+				  << tc::bright_green << "): "
+				  << tc::reset;
 		std::getline(std::cin, git);
 
-		if (git.empty())
+		if (git.empty()) {
 			git = default_git;
+			break;
+		}
 
-		static std::regex validator("(http:\\/|https:\\/|file:\\/\\/)(\\/\\S+)+");
+		static const std::regex url_validator(
+				"(?=^.{0,2048}$)^(https?|ssh|git|file|ftp):\\/\\/"
+				"([^:@\\/]+(:[^:@\\/]+)?@)?[^:@\\/]+(:\\d+)?((?!.*\\/\\/)\\/.*)?$");
 		
-		if (std::regex_match(git, validator))
+		if (std::regex_match(git, url_validator))
 			break;
 
-		std::cout << termcolor::bright_red
+		std::cout << tc::bright_red
 				<< "Invalid URL.\n"
-				<< termcolor::reset;
+				<< tc::reset;
 	}
 
-	std::cout << termcolor::bright_green << "Publisher ("
-			  << termcolor::reset << "Megadodo Publications"
-			  << termcolor::bright_green << "): "
-			  << termcolor::reset;
-	std::getline(std::cin, publisher);
-
-	std::cout << termcolor::bright_green << "Description ("
-			  << termcolor::reset << "42"
-			  << termcolor::bright_green << "): "
-			  << termcolor::reset;
+	std::cout << tc::bright_green << "Description ("
+			  << tc::reset << "42"
+			  << tc::bright_green << "): "
+			  << tc::reset;
 	std::getline(std::cin, description);
 
-	std::cout << termcolor::bright_green << "License ("
-			  << termcolor::reset << "MIT"
-			  << termcolor::bright_green << "): "
-			  << termcolor::reset;
+	// TODO validate SPDX expression
+	std::cout << tc::bright_green << "License ("
+			  << tc::reset << "MIT"
+			  << tc::bright_green << "): "
+			  << tc::reset;
 	std::getline(std::cin, license);
 
-	if (title.empty())
-		title = default_title;
-	if (publisher.empty())
-		publisher = "Megadodo Publications";
 	if (description.empty())
 		description = "The answer to the Ultimate Question of Life, the Universe, and Everything.";
 	if (license.empty())
@@ -126,19 +150,19 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	json package = json::object();
 
-	package["id"] = id;
-	package["title"] = title;
-	package["git"] = git;
-	package["publisher"] = publisher;
+	package["dependencies"] = json::object();
 	package["description"] = description;
+	package["git"] = git;
+	package["id"] = scope + '/' + name;
+	package["keywords"] = json::array();
 	package["license"] = license;
 	package["version"] = "0.1.0";
 
 	fs::path package_path = current_path / "package.json";
 	util::write_file(package_path, util::to_string(package));
 
-	std::cout << termcolor::bright_green << "\nFile has been written:\n"
-			  << termcolor::reset << package_path.string() << '\n';
+	std::cout << tc::bright_green << "\nFile has been written:\n"
+			  << tc::reset << package_path.string() << '\n';
 }
 
 }

@@ -4,6 +4,8 @@
 
 namespace util {
 
+version::version() : major(0), minor(1), patch(0) {}
+
 version::version(uint32_t major, uint32_t minor, uint32_t patch,
 		const std::vector<std::string> &pre_release,
 		const std::vector<std::string> &build_metadata)
@@ -168,7 +170,7 @@ void version::set_pre_release(const std::vector<std::string> &pre_release) {
 
 	for (const std::string &identifier : pre_release) {
 		bool is_numeric = std::all_of(identifier.begin(),
-				identifier.end(), [] (auto &c) { return std::isdigit(c); });
+				identifier.end(), [](auto &c) { return std::isdigit(c); });
 		
 		if (identifier.empty() ||
 				(!is_numeric && !std::regex_match(identifier, validator)) ||

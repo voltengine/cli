@@ -4,6 +4,6 @@
 
 namespace util {
 
-std::string sha256(std::string_view str);
+std::string encode_url(std::string_view content);
 
 }

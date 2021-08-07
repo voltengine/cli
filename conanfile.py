@@ -4,8 +4,8 @@ from conans import ConanFile
 class ConanFile(ConanFile):
 	settings = "os", "compiler", "build_type", "arch"
 	requires = [
+		"date/3.0.1",
 		"libcurl/7.77.0",
-		"libsodium/1.0.18",
 		"rapidjson/cci.20200410",
 		"termcolor/2.0.0"
 	]

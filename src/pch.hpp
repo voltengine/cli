@@ -15,6 +15,7 @@
 #include <cctype>
 #include <chrono>
 #include <concepts>
+#include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -31,6 +32,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -38,7 +40,7 @@
 #include <vector>
 
 #include <curl/curl.h>
+#include <date/date.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/document.h>
-#include <sodium.h>
 #include <termcolor/termcolor.hpp>

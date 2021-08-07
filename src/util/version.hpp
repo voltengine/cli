@@ -8,6 +8,8 @@ class version {
 public:
 	uint32_t major, minor, patch;
 
+	version();
+
 	version(uint32_t major, uint32_t minor, uint32_t patch,
 			const std::vector<std::string> &pre_release,
 			const std::vector<std::string> &build_metadata);

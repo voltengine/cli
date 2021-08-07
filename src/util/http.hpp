@@ -20,36 +20,41 @@ public:
 	struct method {
 		static constexpr char
 				    get[] = "GET",
-				   head[] = "HEAD",
-				options[] = "OPTIONS",
 				   post[] = "POST",
-					put[] = "PUT";
+					put[] = "PUT",
+				    del[] = "DELETE",
+				   head[] = "HEAD",
+				options[] = "OPTIONS";
 	};
 
 	struct response {
-		uint32_t code = 0;
+		int32_t status = -1;
 		headers headers;
 	};
 
 	static constexpr uint32_t buffer_size = 16 * 1024;
 
-	http() noexcept;
+	http();
 
-	~http() noexcept;
+	~http();
 
 	void send();
 
-	void set_version(version version) noexcept;
-
-	void set_method(std::string_view method) noexcept;
-
-	void set_url(std::string_view url) noexcept;
-
-	void set_header(const std::string &name, std::string_view value);
+	void set_version(version version);
 
 	void set_certificate(const std::filesystem::path &path);
 
-	void set_timeout(const std::chrono::seconds &duration) noexcept;
+	void set_method(std::string_view method);
+
+	void set_url(std::string_view url);
+
+	void set_header(const std::string &name, std::string_view value);
+
+	void remove_header(const std::string &name);
+
+	void set_body(std::string_view body);
+
+	void set_timeout(const std::chrono::seconds &duration);
 
 	void on_response(std::function<void(const response &)> &&callback) noexcept;
 
@@ -58,6 +63,8 @@ public:
 private:
 	CURL *handle;
 	headers request_headers;
+	// cURL keeps pointers to these
+	std::string certificate, method, url, body;
 
 	std::optional<std::function<void(const response &)>> response_callback;
 	std::optional<std::function<void(const buffer &)>> data_callback;
@@ -68,6 +75,8 @@ private:
 	static size_t curl_header_function(char *buffer, size_t size, size_t nitems, void *userdata);
 
 	static size_t curl_write_function(char *ptr, size_t size, size_t nmemb, void *userdata);
+
+	void finish_response();
 };
 
 }

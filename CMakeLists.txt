@@ -11,8 +11,7 @@ endforeach()
 # Find Conan packages
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 find_package(CURL REQUIRED)
-find_package(libgit2 REQUIRED)
-find_package(libsodium REQUIRED)
+find_package(date REQUIRED)
 find_package(RapidJSON REQUIRED)
 find_package(termcolor REQUIRED)
 
@@ -35,8 +34,7 @@ target_include_directories(VoltCLI PRIVATE
 
 target_link_libraries(VoltCLI PRIVATE
     CURL::CURL
-    libgit2::libgit2
-    libsodium::libsodium
+    date::date
     RapidJSON::RapidJSON
     termcolor::termcolor
 )

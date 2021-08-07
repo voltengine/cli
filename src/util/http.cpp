@@ -6,7 +6,7 @@ static std::atomic_uint32_t handle_count = 0;
 
 namespace util {
 
-http::http() noexcept {
+http::http() {
 	if (handle_count++ == 0)
 		curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -18,10 +18,14 @@ http::http() noexcept {
 	curl_easy_setopt(handle, CURLOPT_HEADERDATA, this);
 	curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, buffer_size);
 
+	static const std::string agent = std::string("curl/")
+			+ curl_version_info(CURLVERSION_NOW)->version;
+	curl_easy_setopt(handle, CURLOPT_USERAGENT, agent.c_str());
+
 	tmp_buffer.reserve(buffer_size);
 }
 
-http::~http() noexcept {
+http::~http() {
 	curl_easy_cleanup(handle);
 
 	if (--handle_count == 0)
@@ -38,35 +42,42 @@ void http::send() {
 
 	CURLcode curl_code = curl_easy_perform(handle);
 
-	tmp_response.code = 0;
-	tmp_response.headers.clear();
+	finish_response();
+	tmp_response = response();
 
 	if (curl_code != CURLE_OK)
-		throw http::error(curl_easy_strerror(curl_code));
+		throw http::error(curl_easy_strerror(curl_code) + std::string("."));
 }
 
-void http::set_version(http::version version) noexcept {
+void http::set_version(http::version version) {
 	curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, version);
 }
 
-void http::set_method(std::string_view method) noexcept {
-	curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, method.data());
+void http::set_certificate(const std::filesystem::path &path) {
+	curl_easy_setopt(handle, CURLOPT_CAINFO, (certificate = path.string()).data());
 }
 
-void http::set_url(std::string_view url) noexcept {
-	curl_easy_setopt(handle, CURLOPT_URL, url.data());
+void http::set_method(std::string_view method) {
+	curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, (this->method = method).data());
+}
+
+void http::set_url(std::string_view url) {
+	curl_easy_setopt(handle, CURLOPT_URL, (this->url = url).data());
 }
 
 void http::set_header(const std::string &name, std::string_view value) {
 	request_headers[name] = value;
 }
 
-void http::set_certificate(const std::filesystem::path &path) {
-	std::string str = path.string();
-	curl_easy_setopt(handle, CURLOPT_CAINFO, str.c_str());
+void http::remove_header(const std::string &name) {
+	request_headers.erase(name);
 }
 
-void http::set_timeout(const std::chrono::seconds &duration) noexcept {
+void http::set_body(std::string_view body) {
+	curl_easy_setopt(handle, CURLOPT_POSTFIELDS, (this->body = body).data());
+}
+
+void http::set_timeout(const std::chrono::seconds &duration) {
 	curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, duration.count());
 }
 
@@ -97,23 +108,30 @@ size_t http::curl_header_function(char *buffer, size_t size, size_t nitems, void
 
 size_t http::curl_write_function(char *ptr, size_t size, size_t nmemb, void *userdata) {
 	size_t actual_size = size * nmemb;
-	http *http = static_cast<util::http *>(userdata);
 
-	if (http->tmp_response.code == 0) {
-		long response_code;
-		curl_easy_getinfo(http->handle, CURLINFO_RESPONSE_CODE, &response_code);
-		http->tmp_response.code = response_code;
+	http &request = *static_cast<util::http *>(userdata);
+	request.finish_response();
 
-		if (http->response_callback.has_value())
-			http->response_callback.value()(http->tmp_response);
-	}
-
-	if (http->data_callback.has_value()) {
-		http->tmp_buffer.assign(ptr, ptr + actual_size);
-		http->data_callback.value()(http->tmp_buffer);
+	if (request.data_callback.has_value()) {
+		request.tmp_buffer.assign(ptr, ptr + actual_size);
+		request.data_callback.value()(request.tmp_buffer);
 	}
 
 	return actual_size;
+}
+
+void http::finish_response() {
+	if (tmp_response.status == -1) {
+		long response_code;
+		curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
+
+		if (response_code != 0) {
+			tmp_response.status = response_code;
+
+			if (response_callback.has_value())
+				response_callback.value()(tmp_response);
+		}
+	}
 }
 
 }

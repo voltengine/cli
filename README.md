@@ -28,25 +28,37 @@ volt help [{command}]
 volt list
 
 # Describe current/remote package and show available versions:
-volt info [{package-id}]
+volt info [[{scope}/]{name}]
 
 # Search for remote packages by keywords:
 volt search {keywords}
 
 # Generate 'package.json':
-volt init # ask for: id, title, publisher, description
+volt init # asks for id, description, etc.
 
-# Submits 'package.json' to volt archive using '.volt/credentials.json'. Archive updates appropriate manifest if token is valid.
-volt release {secret-token}
+# Check for dependency collisions and download missing components.
+# If a package ID is provided, new dependency will be added to ./package.json, then command continues on as normal.
+# Version is required to be in format: `major.minor`.
+volt install [{id} [{major}.{minor}]]
 
-# Validate ./package.json and check for dependency collisions and download missing components.
-volt install
+# Remove dependency from `package.json`:
+# volt uninstall {id}
 
-# Get latest/specified package version (versions are Git tags):
-# volt install {package-id} [{version}]
+# Authenticates user to selected archive.
+# - Requests client ID from archive.
+# - Receives a token from the user via GitHub device flow.
+# - Saves to `./volt/config.json` for future use.
+volt auth
 
-# Remove all/specified package version(s) (versions are Git tags):
-# volt remove {package-id} [{version}]
+# Uploads 'package.json' to selected archive using token from '.volt/config.json'.
+# Can invoke `volt auth` if not authenticated.
+volt publish
+
+# Removes package or its single version from selected archive.
+volt unpublish {id} [{version}]
+
+# Delete all installed package versions or a single one specified:
+# volt remove {id} [{version}]
 
 # Build and run the editor:
 volt edit

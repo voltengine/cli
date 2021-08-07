@@ -8,7 +8,7 @@ namespace util {
 
 std::string read_file(const fs::path &path) {
 	if (!fs::exists(path))
-		throw std::runtime_error("File not found.");
+		throw std::runtime_error("File not found:\n" + path.string());
 
 	std::ifstream stream(path, std::ifstream::in);
 	std::string buffer;
@@ -28,34 +28,24 @@ void write_file(const fs::path &path, std::string_view str) {
     stream << str;
 }
 
-std::string download(std::string_view url,
-		const fs::path &https_certificate) {
-	std::string_view protocol = url.substr(0, 4);
+std::string download(std::string_view url) {
+	std::string buffer;
 
-	if (protocol == "http") {
-		http::buffer buffer;
-		http request;
+	http request;
+	request.set_certificate(std::getenv("VOLT_PATH") / fs::path("cacert.pem"));
+	request.set_url(url);
+	request.on_response([](const http::response &response) {
+		if (response.status != 200) {
+			throw http::error("Remote returned " +
+					std::to_string(response.status) + ".");
+		}
+	});
+	request.on_data([&buffer](const http::buffer &data) {
+		buffer.insert(buffer.end(), data.begin(), data.end());
+	});
+	request.send();
 
-		if (!https_certificate.empty())
-			request.set_certificate(https_certificate);
-
-		request.set_url(url);
-		request.on_response([](const http::response &response) {
-			if (response.code != 200) {
-				throw http::error("Remote returned " +
-						std::to_string(response.code) + ".");
-			}
-		});
-		request.on_data([&buffer](const http::buffer &data) {
-			buffer.insert(buffer.end(), data.begin(), data.end());
-		});
-		request.send();
-
-		return std::string(buffer.begin(), buffer.end());
-	} else if (protocol == "file")
-		return read_file(url.substr(8));
-	else
-		throw std::runtime_error("Unknown protocol.");
+	return buffer;
 }
 
 void shell(std::string cmd, const std::function<void(

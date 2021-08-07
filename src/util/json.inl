@@ -34,14 +34,14 @@ bool json::is() const noexcept {
 template<json_type T>
 T &json::as() {
 	if (!is<T>())
-		throw std::runtime_error("Bad JSON type.");
+		throw error("Bad JSON type.");
 	return std::get<T>(value);
 }
 
 template<json_type T>
 const T &json::as() const {
 	if (!is<T>())
-		throw std::runtime_error("Bad JSON type.");
+		throw error("Bad JSON type.");
 	return std::get<T>(value);
 }
 

@@ -97,6 +97,10 @@ public:
 	template<json_type T>
 	inline const T &as() const;
 
+	size_t size() const;
+
+	bool contains(const std::string &key) const;
+
 private:
 	std::variant<null, boolean, number, string, array, object> value;
 

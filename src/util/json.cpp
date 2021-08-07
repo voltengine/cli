@@ -78,6 +78,17 @@ json json::parse(std::string_view json) {
 	return parse_rapidjson_value(&document);
 }
 
+size_t json::size() const {
+	if (is<json::array>())
+		return as<json::array>().size();
+	else
+		return as<json::object>().size();
+}
+
+bool json::contains(const std::string &key) const {
+	return as<json::object>().contains(key);
+}
+
 std::string json::to_string(uint8_t current_indent) const {
 	if (is<json::null>())
 		return "null";
