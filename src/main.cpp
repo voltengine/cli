@@ -1,6 +1,7 @@
 #include "pch.hpp"
 
 #include "util/system.hpp"
+#include "colors.hpp"
 #include "command_manager.hpp"
 
 namespace tc = termcolor;
@@ -9,10 +10,13 @@ int main(int argc, char **argv) {
 	std::signal(SIGINT, [](int) {
 		std::cout << tc::reset;
 		util::show_terminal_cursor(true);
+		
 		std::exit(EXIT_SUCCESS);
 	});
 
+	colors::set_from_config();
 	command_manager::init();
+	
 	std::vector<std::string> args;
 
 	if (argc == 1)
@@ -28,14 +32,14 @@ int main(int argc, char **argv) {
 			try {
 				cmd->run(args);
 			} catch (std::exception &e) {
-				std::cout << tc::bright_red
+				std::cout << colors::error
 						  << '\n' << e.what() << '\n'
 						  << tc::reset;
 			}
 		} else
-			std::cout << tc::bright_red << "No such command.\n"
+			std::cout << colors::error << "No such command.\n"
 					  << tc::reset << "Use \""
-					  << tc::bright_green << "volt"
+					  << colors::main << "volt"
 					  << tc::reset << " help\" to list all available.\n";
 	}
 

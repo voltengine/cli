@@ -1,6 +1,7 @@
 {
 	"cmake.debugConfig": {
-        "args": ["auth"]
+		"args": ["install"],
+		"cwd": "D:\\Library\\Source\\voltengine\\cli\\local-packages\\test-dependency\\"
     },
 	"files.associations": {
 		"*.fsh": "glsl",
@@ -91,6 +92,8 @@
 		"typeindex": "cpp",
 		"*.ipp": "cpp",
 		"queue": "cpp",
-		"stack": "cpp"
+		"stack": "cpp",
+		"forward_list": "cpp",
+		"valarray": "cpp"
 	}
 }

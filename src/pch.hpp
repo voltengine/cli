@@ -28,6 +28,7 @@
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <queue>
 #include <regex>
 #include <sstream>
 #include <stack>
@@ -41,6 +42,5 @@
 
 #include <curl/curl.h>
 #include <date/date.h>
-#include <rapidjson/error/en.h>
-#include <rapidjson/document.h>
+#include <nlohmann/json.hpp>
 #include <termcolor/termcolor.hpp>

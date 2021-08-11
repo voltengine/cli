@@ -13,6 +13,7 @@ void command_manager::init() {
 	commands["list"] = std::make_shared<list_command>();
 	commands["publish"] = std::make_shared<publish_command>();
 	commands["search"] = std::make_shared<search_command>();
+	commands["top"] = std::make_shared<top_command>();
 	commands["uninstall"] = std::make_shared<uninstall_command>();
 	commands["unpublish"] = std::make_shared<unpublish_command>();
 }

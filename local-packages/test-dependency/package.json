@@ -1,7 +1,6 @@
 {
 	"dependencies": {
-		"local-dependencies/test-dependency-2": "0.1",
-		"voltengine/volt": "0.1"
+		"voltengine/voltpy": "0.1.0"
 	},
 	"description": "The answer to the Ultimate Question of Life, the Universe, and Everything.",
 	"git": "https://github.com/local-dependencies/test-dependency.git",

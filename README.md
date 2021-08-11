@@ -41,8 +41,11 @@ volt init # asks for id, description, etc.
 # Version is required to be in format: `major.minor`.
 volt install [{id} [{major}.{minor}]]
 
-# Remove dependency from `package.json`:
-# volt uninstall {id}
+# Remove dependency from "package.json":
+volt uninstall {name}
+
+# Update dependencies in "package.json" and install, roll back on exception:
+volt update (major|minor|patch|pre-release) [{name}]
 
 # Authenticates user to selected archive.
 # - Requests client ID from archive.

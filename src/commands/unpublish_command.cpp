@@ -2,20 +2,21 @@
 
 #include "util/file.hpp"
 #include "util/http.hpp"
-#include "util/json.hpp"
 #include "util/version.hpp"
 #include "util/url.hpp"
+#include "colors.hpp"
 #include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 namespace commands {
 
 unpublish_command::unpublish_command() : command(
 		"unpublish",
-		"[{scope}/]{name}[ {version}]",
+		"{id} [{version}]",
 		"Removes package or its single version from selected archive.") {}
 
 void unpublish_command::run(const std::vector<std::string> &args) const {
@@ -31,7 +32,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 1)
 		util::version(args[1]);
 
-	std::string id = common::prepend_default_scope(args[0]);
+	std::string id = common::get_valid_id(args[0]);
 
 	static const std::regex id_validator(
 			"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
@@ -43,19 +44,19 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 	std::string token = common::get_cached_token(url);
 
 	std::cout << "Validating token...";
-	json user;
+	nl::json user;
 	try {
 		user = common::get_user_info(token);
 	} catch (std::exception &e) {
-		std::cout << tc::bright_yellow << " Failed.\n" << tc::reset;
+		std::cout << colors::warning << " Failed.\n" << tc::reset;
 		throw e;
 	}
 
-	if (user.is<json::null>()) {
-		std::cout << tc::bright_yellow << " Failed.\n\n" << tc::reset;
+	if (user.is_null()) {
+		std::cout << colors::warning << " Failed.\n\n" << tc::reset;
 		token = common::authorize(url).token;
 	} else
-		std::cout << tc::bright_green << " Success.\n" << tc::reset;
+		std::cout << colors::success << " Success.\n" << tc::reset;
 
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
@@ -86,7 +87,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 
 	request.send();
 
-	std::cout << (succeed ? tc::bright_green : tc::bright_red);
+	std::cout << (succeed ? colors::success : colors::error);
 	std::cout << '\n' << buffer << '\n' << tc::reset;
 }
 

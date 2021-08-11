@@ -1,10 +1,11 @@
 #include "commands.hpp"
 
 #include "util/file.hpp"
-#include "util/json.hpp"
+#include "colors.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 
 class package {
 public:
@@ -26,7 +27,7 @@ list_command::list_command() : command(
 
 void list_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
-		std::cout << tc::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << colors::warning << "Ignoring extra arguments.\n"
 				  << tc::reset;
 	}
 
@@ -61,12 +62,12 @@ void list_command::run(const std::vector<std::string> &args) const {
 					if (!fs::exists(json_path))
 						continue;
 
-					util::json json = util::json::parse(util::read_file(json_path));
+					nl::json json = nl::json::parse(util::read_file(json_path));
 
-					if (json["id"].as<util::json::string>() != pkg.get_id())
+					if (json["id"] != pkg.get_id())
 						continue;
 
-					if (json["version"].as<util::json::string>() != pkg.version)
+					if (json["version"] != pkg.version)
 						continue;
 
 					packages.push_back(pkg);
@@ -82,9 +83,10 @@ void list_command::run(const std::vector<std::string> &args) const {
 			(packages.size() == 1 ? " installed package" : " installed packages") << ":\n\n";
 
 	for (package &pkg : packages) {
-		std::cout << pkg.scope << '/'
-				  << tc::bright_green
-				  << pkg.name << ' ' << pkg.version
+		std::cout << colors::main << pkg.scope
+				  << tc::reset << '/'
+				  << colors::main << pkg.name
+				  << ' ' << pkg.version
 				  << tc::reset << '\n';
 	}
 }

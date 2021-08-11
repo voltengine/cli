@@ -22,6 +22,7 @@ DECLARE_COMMAND(install_command);
 DECLARE_COMMAND(list_command);
 DECLARE_COMMAND(publish_command);
 DECLARE_COMMAND(search_command);
+DECLARE_COMMAND(top_command);
 DECLARE_COMMAND(uninstall_command);
 DECLARE_COMMAND(unpublish_command);
 

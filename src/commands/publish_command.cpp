@@ -2,11 +2,12 @@
 
 #include "util/file.hpp"
 #include "util/http.hpp"
-#include "util/json.hpp"
+#include "colors.hpp"
 #include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 namespace commands {
@@ -29,22 +30,20 @@ void publish_command::run(const std::vector<std::string> &args) const {
 	std::string token = common::get_cached_token(url);
 
 	std::cout << "Validating token...";
-	json user;
+	nl::json user;
 	try {
 		user = common::get_user_info(token);
 	} catch (std::exception &e) {
-		std::cout << tc::bright_yellow << " Failed.\n" << tc::reset;
+		std::cout << colors::warning << " Failed.\n" << tc::reset;
 		throw e;
 	}
 
-	if (user.is<json::null>()) {
-		std::cout << tc::bright_yellow << " Failed.\n\n" << tc::reset;
+	if (user.is_null()) {
+		std::cout << colors::warning << " Failed.\n\n" << tc::reset;
 		token = common::authorize(url).token;
 	} else
-		std::cout << tc::bright_green << " Success.\n" << tc::reset;
-
-	json package = util::read_file(package_path);
-
+		std::cout << colors::success << " Success.\n" << tc::reset;
+	
 	std::string buffer;
 	http request;
 	bool succeed;
@@ -72,7 +71,7 @@ void publish_command::run(const std::vector<std::string> &args) const {
 
 	request.send();
 
-	std::cout << (succeed ? tc::bright_green : tc::bright_red);
+	std::cout << (succeed ? colors::success : colors::error);
 	std::cout << '\n' << buffer << '\n' << tc::reset;
 }
 

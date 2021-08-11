@@ -1,12 +1,13 @@
 #include "commands.hpp"
 
 #include "util/file.hpp"
-#include "util/json.hpp"
 #include "util/string.hpp"
+#include "colors.hpp"
 #include "command_manager.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 namespace commands {
@@ -14,11 +15,11 @@ namespace commands {
 init_command::init_command() : command(
 		"init",
 		"",
-		"Initializes package.json in current directory.") {}
+		"Initializes \"package.json\" in current directory.") {}
 
 void init_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
-		std::cout << tc::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << colors::warning << "Ignoring extra arguments.\n"
 				  << tc::reset;
 	}
 
@@ -41,15 +42,17 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	while (true) {
 		if (default_scope.empty()) {
-			std::cout << tc::bright_green << "Scope: "
+			std::cout << colors::main << "Scope: "
 					  << tc::reset;
 		} else {
-			std::cout << tc::bright_green << "Scope ("
+			std::cout << colors::main << "Scope ("
 					  << tc::reset << default_scope
-					  << tc::bright_green << "): "
+					  << colors::main << "): "
 					  << tc::reset;
 		}
 		std::getline(std::cin, scope);
+		if (std::cin.fail())
+			std::exit(EXIT_SUCCESS);
 
 		if (scope.empty()) {
 			if (!default_scope.empty())
@@ -57,7 +60,7 @@ void init_command::run(const std::vector<std::string> &args) const {
 		} else if (std::regex_match(scope, scope_validator))
 			break;
 
-		std::cout << tc::bright_red
+		std::cout << colors::error
 				<< "Package scope must be a valid GitHub user/organization name. "
 				"You must be organization's administrator to publish packages in its scope.\n"
 				<< tc::reset;
@@ -78,15 +81,17 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	while (true) {
 		if (default_name.empty()) {
-			std::cout << tc::bright_green << "Name: "
+			std::cout << colors::main << "Name: "
 					  << tc::reset;
 		} else {
-			std::cout << tc::bright_green << "Name ("
+			std::cout << colors::main << "Name ("
 					  << tc::reset << default_name
-					  << tc::bright_green << "): "
+					  << colors::main << "): "
 					  << tc::reset;
 		}
 		std::getline(std::cin, name);
+		if (std::cin.fail())
+			std::exit(EXIT_SUCCESS);
 
 		if (name.empty()) {
 			if (!default_name.empty())
@@ -94,7 +99,7 @@ void init_command::run(const std::vector<std::string> &args) const {
 		} else if (std::regex_match(name, name_validator))
 			break;
 
-		std::cout << tc::bright_red
+		std::cout << colors::error
 				<< "Package name must comprise only lowercase alphanumeric strings "
 				"separated with single hyphens. Name must not start with a digit.\n"
 				<< tc::reset;
@@ -105,11 +110,13 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	std::string default_git = "https://github.com/" + scope + '/' + name + ".git";
 	while (true) {
-		std::cout << tc::bright_green << "Git URL ("
+		std::cout << colors::main << "Git URL ("
 				  << tc::reset << default_git
-				  << tc::bright_green << "): "
+				  << colors::main << "): "
 				  << tc::reset;
 		std::getline(std::cin, git);
+		if (std::cin.fail())
+			std::exit(EXIT_SUCCESS);
 
 		if (git.empty()) {
 			git = default_git;
@@ -123,23 +130,27 @@ void init_command::run(const std::vector<std::string> &args) const {
 		if (std::regex_match(git, url_validator))
 			break;
 
-		std::cout << tc::bright_red
+		std::cout << colors::error
 				<< "Invalid URL.\n"
 				<< tc::reset;
 	}
 
-	std::cout << tc::bright_green << "Description ("
+	std::cout << colors::main << "Description ("
 			  << tc::reset << "42"
-			  << tc::bright_green << "): "
+			  << colors::main << "): "
 			  << tc::reset;
 	std::getline(std::cin, description);
+	if (std::cin.fail())
+			std::exit(EXIT_SUCCESS);
 
 	// TODO validate SPDX expression
-	std::cout << tc::bright_green << "License ("
+	std::cout << colors::main << "License ("
 			  << tc::reset << "MIT"
-			  << tc::bright_green << "): "
+			  << colors::main << "): "
 			  << tc::reset;
 	std::getline(std::cin, license);
+	if (std::cin.fail())
+			std::exit(EXIT_SUCCESS);
 
 	if (description.empty())
 		description = "The answer to the Ultimate Question of Life, the Universe, and Everything.";
@@ -148,20 +159,20 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	util::replace(description, "\\n", "\n");
 
-	json package = json::object();
+	nl::json package;
 
-	package["dependencies"] = json::object();
+	package["dependencies"] = nl::json::object();
 	package["description"] = description;
 	package["git"] = git;
 	package["id"] = scope + '/' + name;
-	package["keywords"] = json::array();
+	package["keywords"] = nl::json::array();
 	package["license"] = license;
 	package["version"] = "0.1.0";
 
 	fs::path package_path = current_path / "package.json";
-	util::write_file(package_path, util::to_string(package));
+	util::write_file(package_path, package.dump(1, '\t'));
 
-	std::cout << tc::bright_green << "\nFile has been written:\n"
+	std::cout << colors::success << "\nFile has been written:\n"
 			  << tc::reset << package_path.string() << '\n';
 }
 

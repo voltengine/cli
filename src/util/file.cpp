@@ -53,7 +53,6 @@ void shell(std::string cmd, const std::function<void(
     std::vector<char> buffer;
 	buffer.resize(buffer_capacity);
 
-	cmd += " 2>&1";
 #if _WIN32
     std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd.c_str(), "r"), _pclose);
 #else

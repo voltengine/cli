@@ -1,5 +1,6 @@
 #include "commands.hpp"
 
+#include "colors.hpp"
 #include "common.hpp"
 
 namespace tc = termcolor;

@@ -1,19 +1,22 @@
 #include "commands.hpp"
 
+#include "util/date.hpp"
 #include "util/file.hpp"
-#include "util/json.hpp"
 #include "util/version.hpp"
+#include "colors.hpp"
 #include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
+using date::operator<<;
 
 namespace commands {
 
 info_command::info_command() : command(
 		"info",
-		"[{scope}/]{name}[ {release}]",
+		"{id} [{version}]",
 		"Shows detailed information about package in the archives.\n"
 		"Release version may be provided to list dependencies insted of releases.") {}
 
@@ -22,12 +25,19 @@ void info_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("Package ID must be provided.");
 
 	if (args.size() > 2) {
-		std::cout << tc::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << colors::warning << "Ignoring extra arguments.\n"
 				  << tc::reset;
 	}
 
-	std::string id = common::prepend_default_scope(args[0]);
-	json manifest = common::find_manifest_in_archives(id);
+	std::string id = common::get_valid_id(args[0]);
+	static const std::regex id_validator(
+			"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
+			"([a-z][a-z\\d]*(-[a-z\\d]+)*)$");
+
+	if (!std::regex_match(id, id_validator))
+		throw std::runtime_error("Invalid package ID.");
+
+	nl::json manifest = common::find_manifest_in_archives(id);
 
 	std::string release = args.size() > 1 ? args[1] : "";
 	if (!release.empty()) {
@@ -41,34 +51,34 @@ void info_command::run(const std::vector<std::string> &args) const {
 
 	size_t slash_index = id.find('/');
 	std::cout << '\n'
-			  << tc::bright_green << id.substr(0, slash_index)
+			  << colors::main << id.substr(0, slash_index)
 			  << tc::reset << '/'
-			  << tc::bright_green << id.substr(slash_index + 1)
+			  << colors::main << id.substr(slash_index + 1)
 			  << tc::reset
 			  << (release.empty() ? "" : ' ' + release) << '\n'
-			  << manifest["description"].as<json::string>() << '\n';
+			  << manifest["description"].get_ref<nl::json::string_t &>() << '\n';
 
-	std::cout << tc::bright_green << "\nGit URL: "
+	std::cout << colors::main << "\nGit URL: "
 			  << tc::reset << git_url << '\n';
 
-	std::cout << tc::bright_green << "License: "
-			  << tc::reset << manifest["license"].as<json::string>() << '\n';
+	std::cout << colors::main << "License: "
+			  << tc::reset << manifest["license"].get_ref<nl::json::string_t &>() << '\n';
 	
-	json::array &keywords = manifest["keywords"];
+	auto &keywords = manifest["keywords"].get_ref<nl::json::array_t &>();
 	if (!keywords.empty()) {
-		std::cout << tc::bright_green << "Keywords: "
+		std::cout << colors::main << "Keywords: "
 				  << tc::reset;
 
-		std::cout << keywords.front().as<json::string>();
+		std::cout << keywords.front().get_ref<nl::json::string_t &>();
 
 		auto it = keywords.begin();
 		while (++it != keywords.end())
-			std::cout << ", " << it->as<json::string>();
+			std::cout << ", " << it->get<std::string>();
 
 		std::cout << '\n';
 	}
 
-	json::object &views = manifest["views"];
+	auto &views = manifest["views"].get_ref<nl::json::object_t &>();
 	uint32_t weekly_views = 0;
 	date::sys_days today = date::floor<date::days>(std::chrono::system_clock::now()); 
 	
@@ -76,46 +86,54 @@ void info_command::run(const std::vector<std::string> &args) const {
 		date::sys_days record_day;
     	std::istringstream(view.first) >> date::parse("%F", record_day);
 		if ((today - record_day).count() < 7)
-			weekly_views += std::round(view.second.as<json::number>());
+			weekly_views += view.second.get<uint32_t>();
 	}
 
-	std::cout << tc::bright_green << "Weekly Views: "
+	std::cout << colors::main << "Weekly Views: "
 			  << tc::reset << weekly_views << '\n';
 
 	if (!release.empty()) {
-		std::string &released = manifest["releases"][release]["created"];
-		std::cout << tc::bright_green << "\nReleased: "
+		date::sys_time<std::chrono::milliseconds> released
+				= util::parse_iso_date(manifest
+				["releases"][release]["created"]);
+
+		std::cout << colors::main << "\nReleased: "
 				  << tc::reset << released << '\n';
 
-		json::object &deps = manifest["releases"][release]["dependencies"];
+		auto &deps = manifest["releases"][release]
+				["dependencies"].get_ref<nl::json::object_t &>();
 
 		if (deps.empty()) {
-			std::cout << tc::bright_green << "\nThis release has no dependencies.\n"
+			std::cout << colors::main << "\nThis release has no dependencies.\n"
 					  << tc::reset;
 		} else {
-			std::cout << tc::bright_green << "\nDependencies:\n"
+			std::cout << colors::main << "\nDependencies:\n"
 					  << tc::reset;
 
 			for (auto &dep : deps) {
 				slash_index = dep.first.find('/');
-				std::cout << '\n'
-						  << tc::bright_green << dep.first.substr(0, slash_index)
+				std::cout << colors::main << dep.first.substr(0, slash_index)
 						  << tc::reset << '/'
-						  << tc::bright_green << dep.first.substr(slash_index + 1)
+						  << colors::main << dep.first.substr(slash_index + 1)
 						  << tc::reset << ' '
-						  << dep.second.as<json::string>() << '\n';
+						  << dep.second.get_ref<nl::json::string_t &>() << '\n';
 			}
 		}
 	} else {
-		std::cout << tc::bright_green << "\nCreated: "
-				  << tc::reset << manifest["created"].as<json::string>() << '\n';
-		std::cout << tc::bright_green << "Modified: "
-				  << tc::reset << manifest["modified"].as<json::string>() << '\n';
+		date::sys_time<std::chrono::milliseconds> created
+				= util::parse_iso_date( manifest["created"]);
+		date::sys_time<std::chrono::milliseconds> modified
+				= util::parse_iso_date( manifest["modified"]);
 
-		json::object &obj = manifest["releases"];
+		std::cout << colors::main << "\nCreated: "
+				  << tc::reset << created << '\n';
+		std::cout << colors::main << "Modified: "
+				  << tc::reset << modified << '\n';
+
+		auto &obj = manifest["releases"].get_ref<nl::json::object_t &>();
 
 		if (obj.empty()) {
-			std::cout << tc::bright_green << "\nThis package has no releases.\n"
+			std::cout << colors::main << "\nThis package has no releases.\n"
 					  << tc::reset;
 		} else {
 			std::vector<util::version> releases;
@@ -125,7 +143,7 @@ void info_command::run(const std::vector<std::string> &args) const {
 				releases.emplace_back(x.first);
 			std::sort(releases.begin(), releases.end(), std::greater());
 
-			std::cout << tc::bright_green << "\nReleases:\n"
+			std::cout << colors::main << "\nReleases:\n"
 					<< tc::reset;
 			
 			for (util::version &version : releases)

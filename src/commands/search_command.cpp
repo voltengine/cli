@@ -1,11 +1,12 @@
 #include "commands.hpp"
 
 #include "util/file.hpp"
-#include "util/json.hpp"
 #include "util/url.hpp"
+#include "colors.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 // [{keyword, [package]}] 
@@ -21,11 +22,8 @@ search_command::search_command() : command(
 		"Searches remote archives for packages.") {}
 
 void search_command::run(const std::vector<std::string> &args) const {
-	if (args.size() == 0) {
-		std::cout << tc::bright_red << "Query must be provided.\n"
-				  << tc::reset;
-		return;
-	}
+	if (args.size() == 0)
+		throw std::runtime_error("Query must be provided.");
 
 	std::string url_path = "search?query=" + util::encode_url(std::accumulate(
 		std::next(args.begin()), 
@@ -39,7 +37,7 @@ void search_command::run(const std::vector<std::string> &args) const {
 	// ID : title + description
 	std::unordered_map<std::string, std::string> packages;
 
-	json::object archives = json::parse(util::read_file(
+	nl::json::object_t archives = nl::json::parse(util::read_file(
 			std::getenv("VOLT_PATH") / fs::path("config.json"))
 			)["archives"];
 
@@ -50,48 +48,49 @@ void search_command::run(const std::vector<std::string> &args) const {
 
 		std::cout << "Searching at \"" << url << "\"..." << std::endl;
 
-		json results;
+		nl::json results;
 		try {
-			results = json::parse(util::download(url + url_path));
+			results = nl::json::parse(util::download(url + url_path));
 		} catch (std::exception &e) {
-			std::cout << tc::bright_yellow
+			std::cout << colors::warning
 					  << e.what() << '\n'
 					  << tc::reset;
 			continue;
 		}
 
-		for (json &item : results.as<json::array>()) {
-			std::string &id = item;
+		for (nl::json &item : results) {
+			std::string id = item;
 			if (packages.contains(id))
 				continue;
 			
 			std::string manifest_url = url + "package/" + id + '/';
-			json manifest;
+			nl::json manifest;
 
 			try {
-				manifest = json::parse(util::download(manifest_url));
-			} catch (std::exception &) {
+				manifest = nl::json::parse(util::download(manifest_url));
+			} catch (...) {
 				// If manifest is unavailable, something
 				// went wrong on the server.
 				continue;
 			}
 
-			packages[id] = manifest["description"].as<json::string>();
+			packages[id] = manifest["description"];
 		}
 	}
 
-	if (packages.size() == 0)
+	if (packages.empty())
 		throw std::runtime_error("No packages were found.");
 
-	std::cout << "\nFound " << packages.size()
-			  << (packages.size() == 1 ? " package:\n" : " packages:\n");
+	std::cout << colors::success << "\nFound " << packages.size()
+			  << (packages.size() == 1 ? " package:\n" : " packages:\n")
+			  << tc::reset;
 
 	for (auto &package : packages) {
 		size_t i = package.first.find('/');
 		std::cout << '\n'
-				  << tc::bright_green << package.first.substr(0, i)
+				  << colors::main << package.first.substr(0, i)
 				  << tc::reset << '/'
-				  << tc::bright_green << package.first.substr(i + 1)
+				  << colors::main << package.first.substr(i + 1)
 				  << tc::reset << '\n' << package.second
 				  << '\n';
 	}

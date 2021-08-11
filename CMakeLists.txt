@@ -12,7 +12,7 @@ endforeach()
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 find_package(CURL REQUIRED)
 find_package(date REQUIRED)
-find_package(RapidJSON REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(termcolor REQUIRED)
 
 file(GLOB_RECURSE TARGET_SOURCES CONFIGURE_DEPENDS
@@ -35,7 +35,7 @@ target_include_directories(VoltCLI PRIVATE
 target_link_libraries(VoltCLI PRIVATE
     CURL::CURL
     date::date
-    RapidJSON::RapidJSON
+    nlohmann_json::nlohmann_json
     termcolor::termcolor
 )
 

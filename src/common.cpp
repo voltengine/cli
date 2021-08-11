@@ -3,9 +3,11 @@
 #include "util/file.hpp"
 #include "util/http.hpp"
 #include "util/system.hpp"
+#include "colors.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 std::vector<std::string> anim_frames {
@@ -14,27 +16,27 @@ std::vector<std::string> anim_frames {
 
 namespace common {
 
-std::string prepend_default_scope(std::string_view id) {
-	json config = json::parse(util::read_file(
+std::string get_valid_id(std::string id) {
+	nl::json config = nl::json::parse(util::read_file(
 			std::getenv("VOLT_PATH") / fs::path("config.json")));
 
 	if (id.find('/') == std::string::npos)
-		return config["defaultScope"].as<json::string>() + '/' + id.data();
-	else
-		return std::string(id);
-}
+		id = config["defaultScope"].get_ref<nl::json::string_t &>() + '/' + id;
 
-json find_manifest_in_archives(std::string id) {
 	static const std::regex id_validator(
-			"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
-			"([a-z][a-z\\d]*(-[a-z\\d]+)*)$");
+		"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
+		"([a-z][a-z\\d]*(-[a-z\\d]+)*)$");
 
 	if (!std::regex_match(id, id_validator))
 		throw std::runtime_error("Invalid package ID.");
 
-	json manifest;
+	return id;
+}
 
-	json::object archives = json::parse(util::read_file(
+nl::json find_manifest_in_archives(std::string id, bool verbose) {
+	nl::json manifest;
+
+	nl::json::object_t archives = nl::json::parse(util::read_file(
 			std::getenv("VOLT_PATH") / fs::path("config.json"))
 			)["archives"];
 
@@ -43,20 +45,23 @@ json find_manifest_in_archives(std::string id) {
 		if (url.back() != '/')
 			url += '/';
 
-		std::cout << "Checking at \"" << url << "\"..." << std::endl;
+		if (verbose)
+			std::cout << "Checking at \"" << url << "\"..." << std::endl;
 
 		url += "package/" + id + '/';
 		try {
-			manifest = json::parse(util::download(url));
+			manifest = nl::json::parse(util::download(url));
 			break;
 		} catch (std::exception &e) {
-			std::cout << tc::bright_yellow
-					  << "Not found: " << e.what() << '\n'
-					  << tc::reset;
+			if (verbose) {
+				std::cout << colors::warning
+						  << "Not found: " << e.what() << '\n'
+						  << tc::reset;
+			}
 		}
 	}
 
-	if (manifest.is<json::null>())
+	if (manifest.is_null())
 		throw std::runtime_error("Package not found in archives.");
 
 	return manifest;
@@ -66,41 +71,43 @@ std::string select_archive() {
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path config_path = volt_path / "config.json";
 
-	json config = json::parse(util::read_file(config_path));
-	json::object &archives = config["archives"];
+	nl::json::object_t archives = nl::json::parse(
+			util::read_file(config_path))["archives"];
 
 	if (archives.size() == 0)
 		throw std::runtime_error("Archive list is empty.");
 
 	size_t archive_index = 0;
 	if (archives.size() != 1) {
-		std::cout << tc::bright_green
+		std::cout << colors::main
 				  << "Multiple archives are available:\n"
 				  << tc::reset;
 
 		for (auto it = archives.begin(); it != archives.end(); it++) {
-			std::cout << tc::bright_green << '['
+			std::cout << colors::main << '['
 					  << tc::reset << std::distance(archives.begin(), it)
-					  << tc::bright_green << "]: "
+					  << colors::main << "]: "
 					  << tc::reset << it->first
 					  << '\n';
 		}
 
 		while (true) {
-			std::cout << tc::bright_green
+			std::cout << colors::main
 					  << "Selection: "
 					  << tc::reset;
 
 			std::string line;
 			std::getline(std::cin, line);
+			if (std::cin.fail())
+				std::exit(EXIT_SUCCESS);
 
 			try {
 				archive_index = std::stoull(line);
 				if (archive_index >= archives.size())
 					throw std::out_of_range("");
 				break;
-			} catch (std::logic_error) {
-				std::cout << tc::bright_red
+			} catch (...) {
+				std::cout << colors::error
 						  << "Invalid input.\n"
 						  << tc::reset;
 			}
@@ -122,19 +129,19 @@ std::string get_cached_token(const std::string &archive_url) {
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path config_path = volt_path / "config.json";
 
-	json config = json::parse(util::read_file(config_path));
+	nl::json config = nl::json::parse(util::read_file(config_path));
 	return config["archives"][archive_url];
 }
 
-json get_user_info(const std::string &token) {
+nl::json get_user_info(const std::string &token) {
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
 
 	if (token.empty())
-		return json();
+		return nl::json();
 
 	std::string buffer;
-	json response;
+	nl::json response;
 	http request;
 
 	request.set_certificate(cert_path);
@@ -153,13 +160,13 @@ json get_user_info(const std::string &token) {
 	});
 
 	request.send();
-	response = json::parse(buffer);
+	response = nl::json::parse(buffer);
 	buffer.clear();
 
 	if (response.contains("login"))
 		return response;
 
-	return json();
+	return nl::json();
 }
  
 authorization_result authorize(const std::string &archive_url) {
@@ -172,7 +179,7 @@ authorization_result authorize(const std::string &archive_url) {
 	std::string client_id = util::download(archive_url + "auth/id/");
 
 	std::string buffer;
-	json response;
+	nl::json response;
 	http request;
 
 	request.set_certificate(cert_path);
@@ -193,7 +200,7 @@ authorization_result authorize(const std::string &archive_url) {
 	request.set_body("scope=read:org&client_id=" + client_id);
 
 	request.send();
-	response = json::parse(buffer);
+	response = nl::json::parse(buffer);
 	buffer.clear();
 
 	std::string device_code = response["device_code"];
@@ -203,11 +210,11 @@ authorization_result authorize(const std::string &archive_url) {
 	std::string verification_uri = response["verification_uri"];
 
 	std::cout << "\nPlease enter your code at verification URL:"
-			  << tc::bright_green
+			  << colors::main
 			  << "\nCode: " << tc::reset << user_code
-			  << tc::bright_green
+			  << colors::main
 			  << "\nURL: " << tc::reset << verification_uri
-			  << tc::bright_green
+			  << colors::main
 			  << "\n\nCode will remain valid for the next "
 			  << std::round(expires_in / 60.0) << " minutes."
 			  << tc::reset << "\n\n";
@@ -226,7 +233,7 @@ authorization_result authorize(const std::string &archive_url) {
 		auto last_checked = start_time;
 		bool opened_browser = false;
 		while (true) {
-			std::cout << tc::bright_green
+			std::cout << colors::main
 					  << anim_frames[frame = (frame + 1) % anim_frames.size()]
 					  << tc::reset << " Waiting for authorization...\r";
 
@@ -250,7 +257,7 @@ authorization_result authorize(const std::string &archive_url) {
 			last_checked = now;
 
 			request.send();
-			response = json::parse(buffer);
+			response = nl::json::parse(buffer);
 			buffer.clear();
 
 			if (response.contains("access_token"))
@@ -260,15 +267,15 @@ authorization_result authorize(const std::string &archive_url) {
 				interval = response["interval"] + 1;
 		}
 
-		result.token = response["access_token"].as<json::string>();
+		result.token = response["access_token"];
 		result.user = get_user_info(result.token);
 
-		if (result.user.is<json::null>())
+		if (result.user.is_null())
 			throw std::runtime_error("Received invalid token.");
 
 		std::cout << "Authorized as "
-			      << tc::bright_green
-				  << result.user["login"].as<json::string>()
+			      << colors::main
+				  << result.user["login"].get_ref<nl::json::string_t &>()
 			      << tc::reset << ".               \n";
 	} catch (std::exception &e) {
 		std::cout << "Authorization failed.         \n";
@@ -277,11 +284,11 @@ authorization_result authorize(const std::string &archive_url) {
 	}
 	util::show_terminal_cursor(true);
 
-	json config = json::parse(util::read_file(config_path));
+	nl::json config = nl::json::parse(util::read_file(config_path));
 	config["archives"][archive_url] = result.token;
-	util::write_file(config_path, util::to_string(config));
+	util::write_file(config_path, config.dump(1, '\t'));
 
-	std::cout << tc::bright_green << "\nFile has been written:\n"
+	std::cout << colors::success << "\nFile has been written:\n"
 			  << tc::reset << config_path.string() << '\n';
 
 	return result;

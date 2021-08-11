@@ -1,10 +1,11 @@
 #include "commands.hpp"
 
 #include "util/file.hpp"
-#include "util/json.hpp"
+#include "colors.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
+namespace nl = nlohmann;
 using namespace util;
 
 namespace commands {
@@ -33,16 +34,17 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 	if (!fs::exists(package_path))
 		throw std::runtime_error("No \"package.json\" in this directory.");
 
-	json package = json::parse(read_file(package_path));
-	json::object &deps = package["dependencies"];
+	nl::json package = nl::json::parse(read_file(package_path));
+	nl::json::object_t &deps = package["dependencies"]
+			.get_ref<nl::json::object_t &>();
 
 	if (std::erase_if(deps, [&args](auto &item) {
 		return item.first.substr(item.first.find('/') + 1) == args[0];
 	}) == 0)
 		throw std::runtime_error("Package has no such dependency.");
 	
-	util::write_file(package_path, util::to_string(package));
-	std::cout << tc::bright_green << "\nFile has been written:\n"
+	util::write_file(package_path, package.dump(1, '\t'));
+	std::cout << colors::success << "\nFile has been written:\n"
 			  << tc::reset << package_path.string() << '\n';
 }
 
