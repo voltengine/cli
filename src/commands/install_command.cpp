@@ -21,12 +21,24 @@ public:
 	std::vector<std::shared_ptr<dependency>> dependencies;
 	std::vector<std::string> warnings;
 
+	std::string get_root_path() const;
+
 	std::string get_str() const;
 
 	std::string get_id() const;
 
 	void set_id(std::string_view id);
 };
+
+std::string dependency::get_root_path() const {
+	std::string path = get_str();
+	auto parent = dependant.lock();
+	while (parent) {
+		path = parent->get_str() + " -> " + path;
+		parent = parent->dependant.lock();
+	}
+	return path;
+}
 
 std::string dependency::get_str() const {
 	return get_id() + ' ' + util::to_string(version);
@@ -52,7 +64,7 @@ install_command::install_command() : command(
 
 void install_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 2) {
-		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
 				  << termcolor::reset;
 	}
 
@@ -62,7 +74,7 @@ void install_command::run(const std::vector<std::string> &args) const {
 	fs::path package_path = fs::current_path() / "package.json";
 
 	if (!fs::exists(package_path))
-		throw std::runtime_error("No \"package.json\" in this directory.");
+		throw std::runtime_error("No \"package.json\" in current directory.");
 
 	nl::json package = nl::json::parse(read_file(package_path));
 
@@ -105,7 +117,7 @@ void install_command::run(const std::vector<std::string> &args) const {
 
 		package["dependencies"][id] = release;
 		util::write_file(package_path, package.dump(1, '\t'));
-		std::cout << colors::success << "\nFile has been written:\n"
+		std::cout << colors::success << "\nFile was written:\n"
 				  << tc::reset << package_path.string() << "\n\n";
 	}
 
@@ -116,75 +128,78 @@ void install_command::run(const std::vector<std::string> &args) const {
 	root->version = util::version(package["version"]);
 
 	// Parent + deps to process and attach to it
-	std::stack<std::pair<std::shared_ptr<dependency> &, nl::json::object_t>> pkgs_to_check;
+	std::queue<std::pair<std::shared_ptr<dependency>, nl::json::object_t>> pkgs_to_check;
 	pkgs_to_check.emplace(root, package["dependencies"]);
 
 	std::unordered_map<std::string, nl::json> manifest_cache;
 
 	while (!pkgs_to_check.empty()) {
-		auto pkg = std::move(pkgs_to_check.top());
+		auto pkg = std::move(pkgs_to_check.front());
 		pkgs_to_check.pop();
 
 		for (auto &dep : pkg.second) {
 			// Add child dependencies to the tree
 			size_t id_slash_index = dep.first.find('/');
+			std::string version_str = dep.second.get_ref<nl::json::string_t &>();
 
 			auto node = std::make_shared<dependency>();
 			node->scope = dep.first.substr(0, id_slash_index);
 			node->name = dep.first.substr(id_slash_index + 1);
-			node->version = dep.second.get_ref<nl::json::string_t &>();
+			node->version = version_str;
 			node->dependant = pkg.first;
 
 			// Detect circular references
 
-			std::vector<dependency *> parents;
-			parents.push_back(pkg.first.get());
-
-			while (true) {
-				auto &parent_node = *parents.back();
-
-				if (parent_node.name == node->name) {
-					std::ostringstream error;
-
-					if (parent_node.scope == node->scope)
-						error << "Circular reference:\n";
-					else {
-						error << "Circular reference with ambiguous scope:\n";
+			auto parent = pkg.first;
+			while (parent) {
+				if (parent->name == node->name) {
+					if (parent->scope == node->scope) {
+						throw std::runtime_error("Circular reference:\n"
+								+ node->get_root_path());
+					} else {
+						throw std::runtime_error("Circular reference with "
+								"ambiguous scope:\n" + node->get_root_path());
 					}
-
-					for (auto it = parents.rbegin(); it != parents.rend(); it++)
-						error << (*it)->get_str() << " -> ";
-					error << dep.first << ' ' << node->version;
-
-					throw std::runtime_error(error.str());
 				}
 
-				if (auto parent = parent_node.dependant.lock())
-					parents.push_back(parent.get());
-				else
-					break;
+				parent = parent->dependant.lock();
 			}
 
 			std::cout << "Checking "
 					  << colors::main << node->scope
 					  << tc::reset << '/'
 					  << colors::main << node->name
-					  << tc::reset << ' ' << node->version << "...\n";
+					  << tc::reset << ' ' << node->version << "... ";
 
 			// Add child dependencies to the tree
 
 			nl::json *manifest;
 			if (!manifest_cache.contains(dep.first)) {
-				manifest = &manifest_cache.emplace(dep.first,
-						common::find_manifest_in_archives(dep.first, false)).first->second;
-			} else
-				manifest = &manifest_cache[dep.first];
+				fs::path package_path = fs::path(std::getenv("VOLT_PATH"))
+						/ "packages" / node->scope / node->name
+						/ version_str / "package.json";
 
-			if (!(*manifest)["releases"].contains(dep.second)) {
-				pkg.first->warnings.push_back("Package " + pkg.first->get_str()
+				if (!fs::exists(package_path)) {
+					std::cout << "(From Remote)\n";
+					manifest = &manifest_cache.emplace(dep.first,
+							common::find_manifest_in_archives(dep.first, false)).first->second;
+				} else {
+					std::cout << "(From Files)\n";
+					auto package = nl::json::parse(util::read_file(package_path));
+					auto manifest_obj = nl::json::object();
+
+					manifest_obj["releases"][version_str]["dependencies"] = package["dependencies"];
+					manifest = &manifest_cache.emplace(dep.first, std::move(manifest_obj)).first->second;
+				}
+			} else {
+				std::cout << "(From Cache)\n";
+				manifest = &manifest_cache[dep.first];
+			}
+
+			if (!(*manifest)["releases"].contains(version_str)) {
+				pkg.first->warnings.push_back("Package " + pkg.first->get_root_path()
 						  + " specifies non-existent release "
-						  + dep.second.get_ref<nl::json::string_t &>()
-						  + " of " + dep.first + '.');
+						  + version_str + " of " + dep.first + '.');
 				continue;
 			}
 
@@ -192,8 +207,8 @@ void install_command::run(const std::vector<std::string> &args) const {
 
 			// Queue dependencies object of that dependency to be also processed
 
-			pkgs_to_check.emplace(pkg.first->dependencies.back(), (*manifest)["releases"]
-					[dep.second.get_ref<nl::json::string_t &>()]["dependencies"]);
+			pkgs_to_check.emplace(pkg.first->dependencies.back(),
+					(*manifest)["releases"][version_str]["dependencies"]);
 		}
 	}
 
@@ -247,26 +262,28 @@ void install_command::run(const std::vector<std::string> &args) const {
 				util::version &new_ver = (*override)->version;
 				util::version &old_ver = node->version;
 
+				std::string warning = parent->get_str()
+						+ " overrides " + node->get_root_path()
+						+ " with " + (*override)->get_str() + ":\n";
+
 				if ((*override)->scope != node->scope) {
-					std::string warning = parent->get_str()
-							  + " overrides " + node->get_str()
-							  + " required by " + owner->get_str()
-							  + " with " + (*override)->get_str() + ":\n"
-							  "Scope was overwritten, now it is "
-							  "a completely different package.";
+					warning += "Scope was overwritten, now it might "
+							"be a completely different package.";
 
 					owner->warnings.push_back(warning);
-				} else if (new_ver.major != old_ver.major || new_ver < old_ver) {
-					std::string warning = parent->get_str()
-							  + " forces " + node->get_id()
-							  + " to " + util::to_string((*override)->version)
-							  + " from " + util::to_string(node->version)
-							  + " required by " + owner->get_str() + ":\n";
+				} else if (new_ver.major != old_ver.major) {
+					warning += "Major version was changed, incompatible "
+							"API will be devastating.";
 
-					if (new_ver.major != old_ver.major) {
-						warning += "Major version was changed, incompatible "
-								"API will be devastating.";
-					} else if (new_ver.minor != old_ver.minor) {
+					owner->warnings.push_back(warning);
+				} else if (new_ver.major == 0 /* && old_ver.major == 0 */
+						&& new_ver.minor != old_ver.minor) {
+					warning += "Minor version in development phase was "
+							"changed, incompatible API will be devastating.";
+
+					owner->warnings.push_back(warning);
+				} else if (new_ver < old_ver) {
+					if (new_ver.minor != old_ver.minor) {
 						warning += "Minor version was downgraded, some "
 								"required features are not be available.";
 					} else if (new_ver.patch != old_ver.patch) {
@@ -318,7 +335,17 @@ void install_command::run(const std::vector<std::string> &args) const {
 		
 		if (it == final_nodes.end())
 			final_nodes.push_back(node);
-		else if ((*it)->version < node->version)
+		else if ((*it)->scope != node->scope
+				|| (*it)->version.major != node->version.major
+				|| (node->version.major == 0 && /* (*it)->version.minor == 0 && */
+				(*it)->version.minor != node->version.minor)) {
+			throw std::runtime_error((*it)->get_root_path()
+					+ " is incompatible with " + node->get_root_path()
+					+ ".\nPlease override this conflict with "
+					"another top-level dependency.\nThis will emit "
+					"warnings, as it is only a temporary fix.\nProper "
+					"solution is to remove one of the conflicting packages.");
+		} else if ((*it)->version < node->version)
 			*it = node;
 
 		for (auto &child : node->dependencies)
@@ -335,7 +362,15 @@ void install_command::run(const std::vector<std::string> &args) const {
 	}
 	std::cout << tc::reset;
 
+	auto packages = nl::json::object();
+
 	for (auto node : final_nodes) {
+		packages[node->get_id()] = util::to_string(node->version);
+
+		// If reconstructed from files
+		if (!manifest_cache[node->get_id()].contains("git"))
+			continue;
+
 		std::cout << "\nDownloading "
 				  << colors::main << node->scope
 				  << tc::reset << '/'
@@ -359,10 +394,25 @@ void install_command::run(const std::vector<std::string> &args) const {
 				"clone --progress --depth 1 --branch " + branch
 				+ ' ' + url + ' ' + path.string();
 		
-		util::shell(cmd, [](std::string_view data) {
-			std::cout << data;
-		});
+		util::shell(cmd, [](std::string_view out) {
+			std::cout << out;
+		}, false);
+
+		std::cout << "Removing repository...\n";
+
+		for (auto &path : fs::recursive_directory_iterator(path / ".git")) {
+			try {
+				fs::permissions(path, fs::perms::all); // Uses fs::perm_options::replace.
+			} catch (...) {}           
+		}
+
+		fs::remove_all(path / ".git");
 	}
+
+	fs::path dependencies_path =  fs::current_path() / "cache" / "dependencies.json";
+	util::write_file(dependencies_path, packages.dump(1, '\t'));
+	std::cout << colors::success << "\nFile was written:\n"
+			  << tc::reset << dependencies_path.string() << '\n';
 
 	switch (warn_count) {
 	case 0:

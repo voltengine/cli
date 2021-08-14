@@ -288,7 +288,7 @@ authorization_result authorize(const std::string &archive_url) {
 	config["archives"][archive_url] = result.token;
 	util::write_file(config_path, config.dump(1, '\t'));
 
-	std::cout << colors::success << "\nFile has been written:\n"
+	std::cout << colors::success << "\nFile was written:\n"
 			  << tc::reset << config_path.string() << '\n';
 
 	return result;

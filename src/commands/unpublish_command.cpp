@@ -24,7 +24,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("Package ID must be provided.");
 
 	if (args.size() > 2) {
-		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
 				  << termcolor::reset;
 	}
 

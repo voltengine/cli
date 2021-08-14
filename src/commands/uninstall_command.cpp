@@ -2,6 +2,7 @@
 
 #include "util/file.hpp"
 #include "colors.hpp"
+#include "command_manager.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
@@ -20,7 +21,7 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("Dependency name must be provided.");
 	
 	if (args.size() > 1) {
-		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n"
+		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
 				  << termcolor::reset;
 	}
 
@@ -32,7 +33,7 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 	fs::path package_path = fs::current_path() / "package.json";
 
 	if (!fs::exists(package_path))
-		throw std::runtime_error("No \"package.json\" in this directory.");
+		throw std::runtime_error("No \"package.json\" in current directory.");
 
 	nl::json package = nl::json::parse(read_file(package_path));
 	nl::json::object_t &deps = package["dependencies"]
@@ -44,8 +45,11 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("Package has no such dependency.");
 	
 	util::write_file(package_path, package.dump(1, '\t'));
-	std::cout << colors::success << "\nFile has been written:\n"
-			  << tc::reset << package_path.string() << '\n';
+	std::cout << colors::success << "\nFile was written:\n"
+			  << tc::reset << package_path.string() << "\n\n";
+
+	command_manager::find_command("install")
+			->run(std::vector<std::string>());
 }
 
 }

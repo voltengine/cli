@@ -30,6 +30,8 @@ public:
 
 	bool operator>(const version &rhs) const noexcept;
 
+	static bool validate(const std::string &str);
+
 	int32_t compare(const version &other) const noexcept;
 
 	bool is_backward_compatible(const version &previous) const noexcept;

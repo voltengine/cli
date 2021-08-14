@@ -24,6 +24,7 @@ std::string read_file(const fs::path &path) {
 }
 
 void write_file(const fs::path &path, std::string_view str) {
+	fs::create_directories(path.parent_path());
 	std::ofstream stream(path, std::ofstream::out);
     stream << str;
 }
@@ -48,10 +49,13 @@ std::string download(std::string_view url) {
 	return buffer;
 }
 
-void shell(std::string cmd, const std::function<void(
-		std::string_view)> &stdout_cb, size_t buffer_capacity) {
+void shell(std::string cmd, const std::function<void(std::string_view)>
+		&stdout_cb, bool redirect_stderr, size_t buffer_capacity) {
     std::vector<char> buffer;
 	buffer.resize(buffer_capacity);
+
+	if (redirect_stderr)
+		cmd += " 2>&1";
 
 #if _WIN32
     std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd.c_str(), "r"), _pclose);

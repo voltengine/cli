@@ -16,30 +16,41 @@ namespace commands {
 
 info_command::info_command() : command(
 		"info",
-		"{id} [{version}]",
+		"[{id} [{version}]]",
 		"Shows detailed information about package in the archives.\n"
 		"Release version may be provided to list dependencies insted of releases.") {}
 
 void info_command::run(const std::vector<std::string> &args) const {
-	if (args.size() == 0)
-		throw std::runtime_error("Package ID must be provided.");
-
 	if (args.size() > 2) {
-		std::cout << colors::warning << "Ignoring extra arguments.\n"
+		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
 				  << tc::reset;
 	}
 
-	std::string id = common::get_valid_id(args[0]);
-	static const std::regex id_validator(
-			"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
-			"([a-z][a-z\\d]*(-[a-z\\d]+)*)$");
+	std::string id, release = args.size() > 1 ? args[1] : "";;
+	nl::json manifest;
+	bool fake_manifest;
+	if (fake_manifest = args.size() == 0) {
+		fs::path package_path = fs::current_path() / "package.json";
+		if (!fs::exists(package_path))
+			throw std::runtime_error("No \"package.json\" in current directory.");
 
-	if (!std::regex_match(id, id_validator))
-		throw std::runtime_error("Invalid package ID.");
+		manifest = nl::json::parse(util::read_file(package_path));
+		id = manifest["id"];
+		release = manifest["version"];
+		manifest["releases"][release]["dependencies"] = manifest["dependencies"];
+	} else {
+		id = common::get_valid_id(args[0]);
+		static const std::regex id_validator(
+				"(?=^.{1,39}\\/.{1,64}$)^([a-z\\d]+(-[a-z\\d]+)*)\\/"
+				"([a-z][a-z\\d]*(-[a-z\\d]+)*)$");
 
-	nl::json manifest = common::find_manifest_in_archives(id);
+		if (!std::regex_match(id, id_validator))
+			throw std::runtime_error("Invalid package ID.");
 
-	std::string release = args.size() > 1 ? args[1] : "";
+		manifest = common::find_manifest_in_archives(id);
+		std::cout << '\n';
+	}
+
 	if (!release.empty()) {
 		util::version dummy(release);
 
@@ -50,8 +61,7 @@ void info_command::run(const std::vector<std::string> &args) const {
 	std::string git_url = manifest["git"];
 
 	size_t slash_index = id.find('/');
-	std::cout << '\n'
-			  << colors::main << id.substr(0, slash_index)
+	std::cout << colors::main << id.substr(0, slash_index)
 			  << tc::reset << '/'
 			  << colors::main << id.substr(slash_index + 1)
 			  << tc::reset
@@ -78,27 +88,31 @@ void info_command::run(const std::vector<std::string> &args) const {
 		std::cout << '\n';
 	}
 
-	auto &views = manifest["views"].get_ref<nl::json::object_t &>();
-	uint32_t weekly_views = 0;
-	date::sys_days today = date::floor<date::days>(std::chrono::system_clock::now()); 
-	
-	for (auto &view : views) {
-		date::sys_days record_day;
-    	std::istringstream(view.first) >> date::parse("%F", record_day);
-		if ((today - record_day).count() < 7)
-			weekly_views += view.second.get<uint32_t>();
+	if (!fake_manifest) {
+		auto &views = manifest["views"].get_ref<nl::json::object_t &>();
+		uint32_t weekly_views = 0;
+		date::sys_days today = date::floor<date::days>(std::chrono::system_clock::now()); 
+		
+		for (auto &view : views) {
+			date::sys_days record_day;
+			std::istringstream(view.first) >> date::parse("%F", record_day);
+			if ((today - record_day).count() < 7)
+				weekly_views += view.second.get<uint32_t>();
+		}
+
+		std::cout << colors::main << "Weekly Views: "
+				<< tc::reset << weekly_views << '\n';
 	}
 
-	std::cout << colors::main << "Weekly Views: "
-			  << tc::reset << weekly_views << '\n';
-
 	if (!release.empty()) {
-		date::sys_time<std::chrono::milliseconds> released
-				= util::parse_iso_date(manifest
-				["releases"][release]["created"]);
+		if (!fake_manifest) {
+			date::sys_time<std::chrono::milliseconds> released
+					= util::parse_iso_date(manifest
+					["releases"][release]["created"]);
 
-		std::cout << colors::main << "\nReleased: "
-				  << tc::reset << released << '\n';
+			std::cout << colors::main << "\nReleased: "
+					<< tc::reset << released << '\n';
+		}
 
 		auto &deps = manifest["releases"][release]
 				["dependencies"].get_ref<nl::json::object_t &>();
@@ -112,7 +126,8 @@ void info_command::run(const std::vector<std::string> &args) const {
 
 			for (auto &dep : deps) {
 				slash_index = dep.first.find('/');
-				std::cout << colors::main << dep.first.substr(0, slash_index)
+				std::cout << "- "
+						  << colors::main << dep.first.substr(0, slash_index)
 						  << tc::reset << '/'
 						  << colors::main << dep.first.substr(slash_index + 1)
 						  << tc::reset << ' '
@@ -147,7 +162,7 @@ void info_command::run(const std::vector<std::string> &args) const {
 					<< tc::reset;
 			
 			for (util::version &version : releases)
-				std::cout << version << '\n';
+				std::cout << "- " << version << '\n';
 		}
 	}
 }

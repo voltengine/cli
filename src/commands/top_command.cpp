@@ -16,6 +16,11 @@ top_command::top_command() : command(
 		"Displays top 10 packages of the week in an archive.") {}
 
 void top_command::run(const std::vector<std::string> &args) const {
+	if (args.size() != 0) {
+		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
+				  << tc::reset;
+	}
+
 	std::string url = common::select_archive();
 
 	std::cout << "Fetching top packages...\n";

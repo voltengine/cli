@@ -15,44 +15,51 @@ version::version(uint32_t major, uint32_t minor, uint32_t patch,
 }
 
 version::version(const std::string &str) {
-	static const std::regex validator("^(0|[1-9]\\d*)\\.(0|[1-9]"
+	static const std::regex parser("^(0|[1-9]\\d*)\\.(0|[1-9]"
 			"\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|"
 			"\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]"
 			"\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:"
 			"\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
+	std::smatch match;
 
-	if (!std::regex_match(str, validator))
+	if (!std::regex_match(str, match, parser))
 		throw std::invalid_argument("String is not a valid semantic version: " + str);
 
-	size_t dot1_pos = str.find('.');
-	size_t dot2_pos = str.find('.', dot1_pos + 2);
+	// size_t dot1_pos = str.find('.');
+	// size_t dot2_pos = str.find('.', dot1_pos + 2);
 
-	size_t hyphen_pos = str.find('-', dot2_pos + 2);
-	size_t plus_pos = str.find('+', dot2_pos + 2);
+	// size_t hyphen_pos = str.find('-', dot2_pos + 2);
+	// size_t plus_pos = str.find('+', dot2_pos + 2);
 
-	major = std::stoul(str.substr(0, dot1_pos));
-	minor = std::stoul(str.substr(dot1_pos + 1, dot2_pos - dot1_pos - 1));
-	patch = std::stoul(str.substr(dot2_pos + 1, std::min(std::min(
-			hyphen_pos, plus_pos), str.size()) - dot2_pos - 1));
+	// major = std::stoul(str.substr(0, dot1_pos));
+	// minor = std::stoul(str.substr(dot1_pos + 1, dot2_pos - dot1_pos - 1));
+	// patch = std::stoul(str.substr(dot2_pos + 1, std::min(std::min(
+	// 		hyphen_pos, plus_pos), str.size()) - dot2_pos - 1));
 
-	if (hyphen_pos < plus_pos) {
-		if (plus_pos != std::string::npos) {
-			// Pre-release and build metadata
-			std::string pre_release = str.substr(hyphen_pos + 1, plus_pos - hyphen_pos - 1);
-			std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
+	// if (hyphen_pos < plus_pos) {
+	// 	if (plus_pos != std::string::npos) {
+	// 		// Pre-release and build metadata
+	// 		std::string pre_release = str.substr(hyphen_pos + 1, plus_pos - hyphen_pos - 1);
+	// 		std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
 
-			this->pre_release = util::split(pre_release, ".");
-			this->build_metadata = util::split(build_metadata, ".");
-		} else {
-			// Pre-release only
-			std::string pre_release = str.substr(hyphen_pos + 1, str.size() - hyphen_pos - 1);
-			this->pre_release = util::split(pre_release, ".");
-		}
-	} else if (plus_pos != std::string::npos) {
-		// Build metadata only
-		std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
-		this->build_metadata = util::split(build_metadata, ".");
-	}
+	// 		this->pre_release = util::split(pre_release, ".");
+	// 		this->build_metadata = util::split(build_metadata, ".");
+	// 	} else {
+	// 		// Pre-release only
+	// 		std::string pre_release = str.substr(hyphen_pos + 1, str.size() - hyphen_pos - 1);
+	// 		this->pre_release = util::split(pre_release, ".");
+	// 	}
+	// } else if (plus_pos != std::string::npos) {
+	// 	// Build metadata only
+	// 	std::string build_metadata = str.substr(plus_pos + 1, str.size() - plus_pos - 1);
+	// 	this->build_metadata = util::split(build_metadata, ".");
+	// }
+
+	major = std::stoul(match.str(1));
+	minor = std::stoul(match.str(2));
+	patch = std::stoul(match.str(3));
+	pre_release = util::split(match.str(4), ".", true);
+	build_metadata = util::split(match.str(5), ".", true);
 }
 
 std::ostream &operator<<(std::ostream &lhs, const version &rhs) {
@@ -99,6 +106,16 @@ return compare(rhs) < 0;
 
 bool version::operator>(const version &rhs) const noexcept {
 	return compare(rhs) > 0;
+}
+
+static bool validate(const std::string &str) {
+	static const std::regex validator("^(0|[1-9]\\d*)\\.(0|[1-9]"
+			"\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|"
+			"\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]"
+			"\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:"
+			"\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
+
+	return std::regex_match(str, validator);
 }
 
 int32_t version::compare(const version &other) const noexcept {

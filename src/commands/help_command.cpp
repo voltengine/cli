@@ -25,7 +25,7 @@ void help_command::run(const std::vector<std::string> &args) const {
 		}
 	} else {
 		if (args.size() > 1) {
-			std::cout << colors::warning << "Ignoring extra arguments.\n"
+			std::cout << colors::warning << "Ignoring extra arguments.\n\n"
 					  << tc::reset;
 		}
 

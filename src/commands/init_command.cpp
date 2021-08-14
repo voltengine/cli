@@ -19,7 +19,7 @@ init_command::init_command() : command(
 
 void init_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
-		std::cout << colors::warning << "Ignoring extra arguments.\n"
+		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
 				  << tc::reset;
 	}
 
@@ -27,8 +27,9 @@ void init_command::run(const std::vector<std::string> &args) const {
 	std::string scope, name, git, description, license;
 
 	std::string default_scope;
-	util::shell("git config user.name", [&default_scope](std::string_view data) {
-		default_scope += data;
+	util::shell("git config user.name",
+			[&default_scope](std::string_view out) {
+		default_scope += out;
 	});
 	default_scope.pop_back(); // Pop newline
 
@@ -172,7 +173,7 @@ void init_command::run(const std::vector<std::string> &args) const {
 	fs::path package_path = current_path / "package.json";
 	util::write_file(package_path, package.dump(1, '\t'));
 
-	std::cout << colors::success << "\nFile has been written:\n"
+	std::cout << colors::success << "\nFile was written:\n"
 			  << tc::reset << package_path.string() << '\n';
 }
 
