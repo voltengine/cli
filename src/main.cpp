@@ -33,14 +33,14 @@ int main(int argc, char **argv) {
 				cmd->run(args);
 			} catch (std::exception &e) {
 				std::cout << colors::error
-						  << '\n' << e.what() << '\n'
-						  << tc::reset;
+				          << '\n' << e.what() << '\n'
+				          << tc::reset;
 			}
 		} else
 			std::cout << colors::error << "No such command.\n"
-					  << tc::reset << "Use \""
-					  << colors::main << "volt"
-					  << tc::reset << " help\" to list all available.\n";
+			          << tc::reset << "Use \""
+			          << colors::main << "volt"
+			          << tc::reset << " help\" to list all available.\n";
 	}
 
 	std::cout << std::flush;

@@ -22,7 +22,7 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 	
 	if (args.size() > 1) {
 		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
-				  << termcolor::reset;
+		          << termcolor::reset;
 	}
 
 	static const std::regex name_validator(
@@ -46,7 +46,7 @@ void uninstall_command::run(const std::vector<std::string> &args) const {
 	
 	util::write_file(package_path, package.dump(1, '\t'));
 	std::cout << colors::success << "\nFile was written:\n"
-			  << tc::reset << package_path.string() << "\n\n";
+	          << tc::reset << package_path.string() << "\n\n";
 
 	command_manager::find_command("install")
 			->run(std::vector<std::string>());

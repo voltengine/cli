@@ -25,7 +25,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 
 	if (args.size() > 2) {
 		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
-				  << termcolor::reset;
+		          << termcolor::reset;
 	}
 
 	// Throws if argument is invalid
@@ -48,7 +48,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 	try {
 		user = common::get_user_info(token);
 	} catch (std::exception &e) {
-		std::cout << colors::warning << " Failed.\n" << tc::reset;
+		std::cout << colors::error << " Failed.\n" << tc::reset;
 		throw e;
 	}
 

@@ -25,6 +25,8 @@ public:
 
 	std::string get_str() const;
 
+	uint32_t get_depth() const;
+
 	std::string get_id() const;
 
 	void set_id(std::string_view id);
@@ -42,6 +44,16 @@ std::string dependency::get_root_path() const {
 
 std::string dependency::get_str() const {
 	return get_id() + ' ' + util::to_string(version);
+}
+
+uint32_t dependency::get_depth() const {
+	uint32_t depth = 0;
+	auto parent = dependant.lock();
+	while (parent) {
+		depth++;
+		parent = parent->dependant.lock();
+	}
+	return depth;
 }
 
 std::string dependency::get_id() const {
@@ -65,12 +77,13 @@ install_command::install_command() : command(
 void install_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 2) {
 		std::cout << termcolor::bright_yellow << "Ignoring extra arguments.\n\n"
-				  << termcolor::reset;
+		          << termcolor::reset;
 	}
 
 	if (args.size() > 1)
 		util::version(args[1]);
 
+	fs::path volt_path = std::getenv("VOLT_PATH");
 	fs::path package_path = fs::current_path() / "package.json";
 
 	if (!fs::exists(package_path))
@@ -118,10 +131,13 @@ void install_command::run(const std::vector<std::string> &args) const {
 		package["dependencies"][id] = release;
 		util::write_file(package_path, package.dump(1, '\t'));
 		std::cout << colors::success << "\nFile was written:\n"
-				  << tc::reset << package_path.string() << "\n\n";
+		          << tc::reset << package_path.string() << "\n\n";
 	}
 
 	std::cout << "Building dependency tree...\n";
+
+	if (package["dependencies"].empty())
+		throw std::runtime_error("Package has no dependencies.");
 
 	auto root = std::make_shared<dependency>();
 	root->set_id(package["id"]);
@@ -166,17 +182,17 @@ void install_command::run(const std::vector<std::string> &args) const {
 			}
 
 			std::cout << "Checking "
-					  << colors::main << node->scope
-					  << tc::reset << '/'
-					  << colors::main << node->name
-					  << tc::reset << ' ' << node->version << "... ";
+			          << colors::main << node->scope
+			          << tc::reset << '/'
+			          << colors::main << node->name
+			          << tc::reset << ' ' << node->version << "... ";
 
 			// Add child dependencies to the tree
 
 			nl::json *manifest;
 			if (!manifest_cache.contains(dep.first)) {
-				fs::path package_path = fs::path(std::getenv("VOLT_PATH"))
-						/ "packages" / node->scope / node->name
+				fs::path package_path = volt_path / "packages"
+						/ node->scope / node->name
 						/ version_str / "package.json";
 
 				if (!fs::exists(package_path)) {
@@ -212,25 +228,6 @@ void install_command::run(const std::vector<std::string> &args) const {
 		}
 	}
 
-	/* {
-		std::cout << "\nTree structure:\n";
-
-		std::stack<std::pair<uint32_t, dependency &>> nodes;
-		nodes.emplace(0, *root);
-		while (!nodes.empty()) {
-			auto node = nodes.top();
-			nodes.pop();
-
-			std::cout << std::string(node.first, '\t');
-			std::cout << node.second.get_id() << '\n';
-
-			for (auto &x : node.second.dependencies)
-				nodes.emplace(node.first + 1, *x);
-		}
-	} */
-
-	std::cout << "\nApplying overrides...\n";
-
 	// Traversal order matters both during
 	// applying overrides or flattening the tree.
 	// In the first case it ensures that no warnings
@@ -238,8 +235,28 @@ void install_command::run(const std::vector<std::string> &args) const {
 	// And as for the latter - see further down.
 	std::queue<dependency *> nodes_to_visit;
 
+	std::cout << "\nComputing package depths...\n";
+	std::map<std::string, uint32_t> package_depths;
+	
 	// Can't push root, because each
 	// node we visit must have a parent
+	for (auto &child : root->dependencies)
+		nodes_to_visit.push(child.get());
+
+	while (!nodes_to_visit.empty()) {
+		auto node = nodes_to_visit.front();
+		nodes_to_visit.pop();
+
+		uint32_t depth = node->get_depth();
+		if (!package_depths.contains(node->name) ||
+				package_depths[node->name] < depth)
+			package_depths[node->name] = depth;
+
+		for (auto &child : node->dependencies)
+			nodes_to_visit.push(child.get());
+	}
+
+	std::cout << "\nApplying overrides...\n";
 	for (auto &child : root->dependencies)
 		nodes_to_visit.push(child.get());
 	
@@ -317,9 +334,7 @@ void install_command::run(const std::vector<std::string> &args) const {
 	std::vector<dependency *> final_nodes;
 
 	// This is a queue. Equal versions with different build metadata
-	// tags will compare more important for packages higher
-	// in the tree or for packages that precede others
-	// on the dependency list if they are on the same tree level.
+	// tags will compare more important for packages higher in the tree.
 	for (auto &child : root->dependencies)
 		nodes_to_visit.push(child.get());
 	
@@ -335,18 +350,12 @@ void install_command::run(const std::vector<std::string> &args) const {
 		
 		if (it == final_nodes.end())
 			final_nodes.push_back(node);
-		else if ((*it)->scope != node->scope
-				|| (*it)->version.major != node->version.major
-				|| (node->version.major == 0 && /* (*it)->version.minor == 0 && */
-				(*it)->version.minor != node->version.minor)) {
+		else if ((*it)->scope != node->scope ||
+				(*it)->version != node->version) {
 			throw std::runtime_error((*it)->get_root_path()
-					+ " is incompatible with " + node->get_root_path()
-					+ ".\nPlease override this conflict with "
-					"another top-level dependency.\nThis will emit "
-					"warnings, as it is only a temporary fix.\nProper "
-					"solution is to remove one of the conflicting packages.");
-		} else if ((*it)->version < node->version)
-			*it = node;
+					+ " conflicts with " + node->get_root_path()
+					+ ".\nPlease override this conflict with another top-level dependency.");
+		}
 
 		for (auto &child : node->dependencies)
 			nodes_to_visit.push(child.get());
@@ -362,24 +371,28 @@ void install_command::run(const std::vector<std::string> &args) const {
 	}
 	std::cout << tc::reset;
 
-	auto packages = nl::json::object();
+	std::vector<std::pair<std::string, uint32_t>> paths_to_sort;
+	paths_to_sort.reserve(final_nodes.size());
 
 	for (auto node : final_nodes) {
-		packages[node->get_id()] = util::to_string(node->version);
+		std::string branch = util::to_string(node->version);
+		fs::path path = volt_path / "packages"
+				/ node->scope / node->name / branch;
+		std::string path_str = path.string();
+#ifdef _WIN32
+		util::replace(path_str, "\\", "/");
+#endif
+		paths_to_sort.emplace_back(node->name + ' ' +  path_str + '/', package_depths[node->name]);
 
 		// If reconstructed from files
 		if (!manifest_cache[node->get_id()].contains("git"))
 			continue;
 
 		std::cout << "\nDownloading "
-				  << colors::main << node->scope
-				  << tc::reset << '/'
-				  << colors::main << node->name << ' '
-				  << tc::reset << node->version << ":\n";
-
-		std::string branch = util::to_string(node->version);
-		fs::path path = std::getenv("VOLT_PATH");
-		path = path / "packages" / node->scope / node->name / branch;
+		          << colors::main << node->scope
+		          << tc::reset << '/'
+		          << colors::main << node->name << ' '
+		          << tc::reset << node->version << ":\n";
 
 		try {
 			if (!fs::is_empty(path)) {
@@ -409,24 +422,40 @@ void install_command::run(const std::vector<std::string> &args) const {
 		fs::remove_all(path / ".git");
 	}
 
-	fs::path dependencies_path =  fs::current_path() / "cache" / "dependencies.json";
-	util::write_file(dependencies_path, packages.dump(1, '\t'));
+	std::sort(
+		paths_to_sort.begin(), paths_to_sort.end(),
+		[](auto &a, auto &b) {
+			return a.second > b.second;
+		}
+	);
+
+	std::string paths = std::accumulate(
+		std::next(paths_to_sort.begin()), 
+		paths_to_sort.end(), 
+		paths_to_sort.front().first, 
+		[](std::string &&accumulator, auto &item) {
+			return std::move(accumulator) + '\n' + item.first;
+		}
+	);
+
+	fs::path paths_file =  fs::current_path() / "cache" / "packages.txt";
+	util::write_file(paths_file, paths);
 	std::cout << colors::success << "\nFile was written:\n"
-			  << tc::reset << dependencies_path.string() << '\n';
+	          << tc::reset << paths_file.string() << '\n';
 
 	switch (warn_count) {
 	case 0:
 		std::cout << colors::success
-				  << "\nFinished without warnings.\n" << tc::reset;
+		          << "\nFinished without warnings.\n" << tc::reset;
 		break;
 	case 1:
 		std::cout << colors::warning
-				  << "\nFinished with 1 warning.\n" << tc::reset;
+		          << "\nFinished with 1 warning.\n" << tc::reset;
 		break;
 	default:
 		std::cout << colors::warning << "\nFinished with "
 				+ std::to_string(warn_count) + " warnings.\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 }
 

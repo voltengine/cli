@@ -18,7 +18,7 @@ top_command::top_command() : command(
 void top_command::run(const std::vector<std::string> &args) const {
 	if (args.size() != 0) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 
 	std::string url = common::select_archive();
@@ -54,14 +54,14 @@ void top_command::run(const std::vector<std::string> &args) const {
 
 		size_t i = id.find('/');
 		std::cout << '\n'
-				  << colors::main << id.substr(0, i)
-				  << tc::reset << '/'
-				  << colors::main << id.substr(i + 1)
-				  << tc::reset << " (" << colors::main
-				  << weekly_views << tc::reset << " View"
-				  << (weekly_views == 1 ? ")\n" : "s)\n")
-				  << manifest["description"].get_ref<nl::json::string_t &>()
-				  << '\n';
+		          << colors::main << id.substr(0, i)
+		          << tc::reset << '/'
+		          << colors::main << id.substr(i + 1)
+		          << tc::reset << " (" << colors::main
+		          << weekly_views << tc::reset << " View"
+		          << (weekly_views == 1 ? ")\n" : "s)\n")
+		          << manifest["description"].get_ref<nl::json::string_t &>()
+		          << '\n';
 	}
 }
 

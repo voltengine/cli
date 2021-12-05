@@ -16,7 +16,7 @@ auth_command::auth_command() : command(
 void auth_command::run(const std::vector<std::string> &args) const {
 	if (args.size() != 0) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 	common::authorize(common::select_archive());
 }

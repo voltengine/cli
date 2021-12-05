@@ -23,7 +23,7 @@ info_command::info_command() : command(
 void info_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 2) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 
 	std::string id, release = args.size() > 1 ? args[1] : "";;
@@ -62,22 +62,22 @@ void info_command::run(const std::vector<std::string> &args) const {
 
 	size_t slash_index = id.find('/');
 	std::cout << colors::main << id.substr(0, slash_index)
-			  << tc::reset << '/'
-			  << colors::main << id.substr(slash_index + 1)
-			  << tc::reset
-			  << (release.empty() ? "" : ' ' + release) << '\n'
-			  << manifest["description"].get_ref<nl::json::string_t &>() << '\n';
+	          << tc::reset << '/'
+	          << colors::main << id.substr(slash_index + 1)
+	          << tc::reset
+	          << (release.empty() ? "" : ' ' + release) << '\n'
+	          << manifest["description"].get_ref<nl::json::string_t &>() << '\n';
 
 	std::cout << colors::main << "\nGit URL: "
-			  << tc::reset << git_url << '\n';
+	          << tc::reset << git_url << '\n';
 
 	std::cout << colors::main << "License: "
-			  << tc::reset << manifest["license"].get_ref<nl::json::string_t &>() << '\n';
+	          << tc::reset << manifest["license"].get_ref<nl::json::string_t &>() << '\n';
 	
 	auto &keywords = manifest["keywords"].get_ref<nl::json::array_t &>();
 	if (!keywords.empty()) {
 		std::cout << colors::main << "Keywords: "
-				  << tc::reset;
+		          << tc::reset;
 
 		std::cout << keywords.front().get_ref<nl::json::string_t &>();
 
@@ -119,19 +119,19 @@ void info_command::run(const std::vector<std::string> &args) const {
 
 		if (deps.empty()) {
 			std::cout << colors::main << "\nThis release has no dependencies.\n"
-					  << tc::reset;
+			          << tc::reset;
 		} else {
 			std::cout << colors::main << "\nDependencies:\n"
-					  << tc::reset;
+			          << tc::reset;
 
 			for (auto &dep : deps) {
 				slash_index = dep.first.find('/');
 				std::cout << "- "
-						  << colors::main << dep.first.substr(0, slash_index)
-						  << tc::reset << '/'
-						  << colors::main << dep.first.substr(slash_index + 1)
-						  << tc::reset << ' '
-						  << dep.second.get_ref<nl::json::string_t &>() << '\n';
+				          << colors::main << dep.first.substr(0, slash_index)
+				          << tc::reset << '/'
+				          << colors::main << dep.first.substr(slash_index + 1)
+				          << tc::reset << ' '
+				          << dep.second.get_ref<nl::json::string_t &>() << '\n';
 			}
 		}
 	} else {
@@ -141,15 +141,15 @@ void info_command::run(const std::vector<std::string> &args) const {
 				= util::parse_iso_date( manifest["modified"]);
 
 		std::cout << colors::main << "\nCreated: "
-				  << tc::reset << created << '\n';
+		          << tc::reset << created << '\n';
 		std::cout << colors::main << "Modified: "
-				  << tc::reset << modified << '\n';
+		          << tc::reset << modified << '\n';
 
 		auto &obj = manifest["releases"].get_ref<nl::json::object_t &>();
 
 		if (obj.empty()) {
 			std::cout << colors::main << "\nThis package has no releases.\n"
-					  << tc::reset;
+			          << tc::reset;
 		} else {
 			std::vector<util::version> releases;
 			releases.reserve(obj.size());

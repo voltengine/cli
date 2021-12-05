@@ -94,6 +94,10 @@
 		"queue": "cpp",
 		"stack": "cpp",
 		"forward_list": "cpp",
-		"valarray": "cpp"
+		"valarray": "cpp",
+		"bit": "cpp",
+		"charconv": "cpp",
+		"format": "cpp",
+		"stop_token": "cpp"
 	}
 }

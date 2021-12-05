@@ -1,9 +1,11 @@
 #include "system.hpp"
 
+namespace fs = std::filesystem;
+
 namespace util {
 
 void show_terminal_cursor(bool show) {
-#if _WIN32
+#ifdef _WIN32
 	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_CURSOR_INFO info;
 
@@ -16,12 +18,21 @@ void show_terminal_cursor(bool show) {
 }
 
 void open_browser(const std::string &url) {
-#if _WIN32
+#ifdef _WIN32
 	std::system(("start " + url).c_str());
 #elif __linux__
 	std::system(("URL=\"" + url + "\""
 			"&& xdg-open $URL || sensible-browser $URL"
 			"|| x-www-browser $URL || gnome-open $URL").c_str());
+#endif
+}
+
+void start_in_background(const fs::path &path) {
+#ifdef _WIN32
+	std::system(("start \"\" /D \"" + path.parent_path().string()
+			+ "\" \"" + path.string() + '"').c_str());
+#elif __linux__
+	std::system(('"' + path.string() + "\" &").c_str());
 #endif
 }
 

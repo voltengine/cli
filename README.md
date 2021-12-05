@@ -63,10 +63,10 @@ volt unpublish {id} [{version}]
 # Delete all installed package versions or a single one specified:
 # volt remove {id} [{version}]
 
-# Build and run the editor:
+# Build for development and run the app:
 volt edit
 
-# Build the editor and execute headless build:
+# Build for development or a specific platform.
 volt build [{platform}]
 
 # + Future dependency management and package deployment.

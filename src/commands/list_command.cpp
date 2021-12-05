@@ -28,7 +28,7 @@ list_command::list_command() : command(
 void list_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 
 	fs::path packages_path = std::getenv("VOLT_PATH") / fs::path("packages/");
@@ -84,10 +84,10 @@ void list_command::run(const std::vector<std::string> &args) const {
 
 	for (package &pkg : packages) {
 		std::cout << colors::main << pkg.scope
-				  << tc::reset << '/'
-				  << colors::main << pkg.name
-				  << ' ' << pkg.version
-				  << tc::reset << '\n';
+		          << tc::reset << '/'
+		          << colors::main << pkg.name
+		          << ' ' << pkg.version
+		          << tc::reset << '\n';
 	}
 }
 

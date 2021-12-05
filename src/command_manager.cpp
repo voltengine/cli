@@ -6,6 +6,9 @@ using namespace commands;
 
 void command_manager::init() {
 	commands["auth"] = std::make_shared<auth_command>();
+	commands["build"] = std::make_shared<build_command>();
+	commands["debug"] = std::make_shared<debug_command>();
+	commands["edit"] = std::make_shared<edit_command>();
 	commands["help"] = std::make_shared<help_command>();
 	commands["info"] = std::make_shared<info_command>();
 	commands["init"] = std::make_shared<init_command>();

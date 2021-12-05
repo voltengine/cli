@@ -20,7 +20,7 @@ init_command::init_command() : command(
 void init_command::run(const std::vector<std::string> &args) const {
 	if (args.size() > 0) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 
 	fs::path current_path = fs::current_path();
@@ -44,12 +44,12 @@ void init_command::run(const std::vector<std::string> &args) const {
 	while (true) {
 		if (default_scope.empty()) {
 			std::cout << colors::main << "Scope: "
-					  << tc::reset;
+			          << tc::reset;
 		} else {
 			std::cout << colors::main << "Scope ("
-					  << tc::reset << default_scope
-					  << colors::main << "): "
-					  << tc::reset;
+			          << tc::reset << default_scope
+			          << colors::main << "): "
+			          << tc::reset;
 		}
 		std::getline(std::cin, scope);
 		if (std::cin.fail())
@@ -83,12 +83,12 @@ void init_command::run(const std::vector<std::string> &args) const {
 	while (true) {
 		if (default_name.empty()) {
 			std::cout << colors::main << "Name: "
-					  << tc::reset;
+			          << tc::reset;
 		} else {
 			std::cout << colors::main << "Name ("
-					  << tc::reset << default_name
-					  << colors::main << "): "
-					  << tc::reset;
+			          << tc::reset << default_name
+			          << colors::main << "): "
+			          << tc::reset;
 		}
 		std::getline(std::cin, name);
 		if (std::cin.fail())
@@ -112,9 +112,9 @@ void init_command::run(const std::vector<std::string> &args) const {
 	std::string default_git = "https://github.com/" + scope + '/' + name + ".git";
 	while (true) {
 		std::cout << colors::main << "Git URL ("
-				  << tc::reset << default_git
-				  << colors::main << "): "
-				  << tc::reset;
+		          << tc::reset << default_git
+		          << colors::main << "): "
+		          << tc::reset;
 		std::getline(std::cin, git);
 		if (std::cin.fail())
 			std::exit(EXIT_SUCCESS);
@@ -137,18 +137,18 @@ void init_command::run(const std::vector<std::string> &args) const {
 	}
 
 	std::cout << colors::main << "Description ("
-			  << tc::reset << "42"
-			  << colors::main << "): "
-			  << tc::reset;
+	          << tc::reset << "42"
+	          << colors::main << "): "
+	          << tc::reset;
 	std::getline(std::cin, description);
 	if (std::cin.fail())
 			std::exit(EXIT_SUCCESS);
 
 	// TODO validate SPDX expression
 	std::cout << colors::main << "License ("
-			  << tc::reset << "MIT"
-			  << colors::main << "): "
-			  << tc::reset;
+	          << tc::reset << "MIT"
+	          << colors::main << "): "
+	          << tc::reset;
 	std::getline(std::cin, license);
 	if (std::cin.fail())
 			std::exit(EXIT_SUCCESS);
@@ -170,11 +170,24 @@ void init_command::run(const std::vector<std::string> &args) const {
 	package["license"] = license;
 	package["version"] = "0.1.0";
 
+	// Write package.json
 	fs::path package_path = current_path / "package.json";
 	util::write_file(package_path, package.dump(1, '\t'));
 
 	std::cout << colors::success << "\nFile was written:\n"
-			  << tc::reset << package_path.string() << '\n';
+	          << tc::reset << package_path.string() << '\n';
+
+	// Copy the template
+	std::cout << "\nCopying template files...";
+	fs::path volt_path = std::getenv("VOLT_PATH");
+	try {
+		fs::copy(volt_path / "template", current_path);
+	} catch (...) {
+		std::cout << colors::warning << " Failed.\n" << tc::reset;
+		return;
+	}
+
+	std::cout << colors::success << " Done.\n" << tc::reset;
 }
 
 }

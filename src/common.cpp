@@ -2,6 +2,7 @@
 
 #include "util/file.hpp"
 #include "util/http.hpp"
+#include "util/string.hpp"
 #include "util/system.hpp"
 #include "colors.hpp"
 
@@ -55,8 +56,8 @@ nl::json find_manifest_in_archives(std::string id, bool verbose) {
 		} catch (std::exception &e) {
 			if (verbose) {
 				std::cout << colors::warning
-						  << "Not found: " << e.what() << '\n'
-						  << tc::reset;
+				          << "Not found: " << e.what() << '\n'
+				          << tc::reset;
 			}
 		}
 	}
@@ -80,21 +81,21 @@ std::string select_archive() {
 	size_t archive_index = 0;
 	if (archives.size() != 1) {
 		std::cout << colors::main
-				  << "Multiple archives are available:\n"
-				  << tc::reset;
+		          << "Multiple archives are available:\n"
+		          << tc::reset;
 
 		for (auto it = archives.begin(); it != archives.end(); it++) {
 			std::cout << colors::main << '['
-					  << tc::reset << std::distance(archives.begin(), it)
-					  << colors::main << "]: "
-					  << tc::reset << it->first
-					  << '\n';
+			          << tc::reset << std::distance(archives.begin(), it)
+			          << colors::main << "]: "
+			          << tc::reset << it->first
+			          << '\n';
 		}
 
 		while (true) {
 			std::cout << colors::main
-					  << "Selection: "
-					  << tc::reset;
+			          << "Selection: "
+			          << tc::reset;
 
 			std::string line;
 			std::getline(std::cin, line);
@@ -108,8 +109,8 @@ std::string select_archive() {
 				break;
 			} catch (...) {
 				std::cout << colors::error
-						  << "Invalid input.\n"
-						  << tc::reset;
+				          << "Invalid input.\n"
+				          << tc::reset;
 			}
 		}
 
@@ -210,14 +211,14 @@ authorization_result authorize(const std::string &archive_url) {
 	std::string verification_uri = response["verification_uri"];
 
 	std::cout << "\nPlease enter your code at verification URL:"
-			  << colors::main
-			  << "\nCode: " << tc::reset << user_code
-			  << colors::main
-			  << "\nURL: " << tc::reset << verification_uri
-			  << colors::main
-			  << "\n\nCode will remain valid for the next "
-			  << std::round(expires_in / 60.0) << " minutes."
-			  << tc::reset << "\n\n";
+	          << colors::main
+	          << "\nCode: " << tc::reset << user_code
+	          << colors::main
+	          << "\nURL: " << tc::reset << verification_uri
+	          << colors::main
+	          << "\n\nCode will remain valid for the next "
+	          << std::round(expires_in / 60.0) << " minutes."
+	          << tc::reset << "\n\n";
 	
 	request.set_url("https://github.com/login/oauth/access_token");
 	request.set_body("client_id=" + client_id
@@ -234,8 +235,8 @@ authorization_result authorize(const std::string &archive_url) {
 		bool opened_browser = false;
 		while (true) {
 			std::cout << colors::main
-					  << anim_frames[frame = (frame + 1) % anim_frames.size()]
-					  << tc::reset << " Waiting for authorization...\r";
+			          << anim_frames[frame = (frame + 1) % anim_frames.size()]
+			          << tc::reset << " Waiting for authorization...\r";
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -275,7 +276,7 @@ authorization_result authorize(const std::string &archive_url) {
 
 		std::cout << "Authorized as "
 			      << colors::main
-				  << result.user["login"].get_ref<nl::json::string_t &>()
+		          << result.user["login"].get_ref<nl::json::string_t &>()
 			      << tc::reset << ".               \n";
 	} catch (std::exception &e) {
 		std::cout << "Authorization failed.         \n";
@@ -289,9 +290,86 @@ authorization_result authorize(const std::string &archive_url) {
 	util::write_file(config_path, config.dump(1, '\t'));
 
 	std::cout << colors::success << "\nFile was written:\n"
-			  << tc::reset << config_path.string() << '\n';
+	          << tc::reset << config_path.string() << '\n';
 
 	return result;
+}
+
+void cmake_build(
+		const fs::path &build_path,
+		const fs::path &toolchain_path,
+		bool development, bool debug) {
+	auto build_path_str = build_path.string();
+	auto toolchain_path_str = toolchain_path.string();
+
+#ifdef _WIN32
+	util::replace(build_path_str, "\\", "\\\\");
+	util::replace(toolchain_path_str, "\\", "\\\\");
+#endif
+
+	std::string cmd = "cmake -S . -B \"" + build_path_str + "\" --no-warn-unused-cli"
+			" -D CMAKE_BUILD_TYPE=" + (debug ? "Debug" : "Release");
+	if (!toolchain_path.empty())
+		cmd += " -D CMAKE_TOOLCHAIN_FILE=\"" + toolchain_path_str + '"';
+	if (!development)
+		cmd += " -D VOLT_DEVELOPMENT=OFF";
+
+	std::cout << colors::main << "CMake configuration:\n" << tc::reset;
+	
+	if (util::shell(cmd, [](std::string_view out) {
+		std::cout << out;
+	}) != 0)
+		throw std::runtime_error("CMake configuration failed.");
+
+	std::cout << colors::main << "\nCMake build:\n" << tc::reset;
+
+	if (util::shell("cmake --build \"" + build_path_str +
+			"\" --config " + (debug ? "Debug" : "Release"),
+			[](std::string_view out) {
+		std::cout << out;
+	}) != 0)
+		throw std::runtime_error("CMake build failed.");
+}
+
+fs::path copy_cmake_output_binaries(
+		const std::filesystem::path &build_path,
+		const std::filesystem::path &target_path) {
+	fs::path current_path = fs::current_path();
+	auto package = nl::json::parse(util::read_file(
+			current_path / "package.json"));
+	
+	auto id = package["id"].get_ref<nl::json::string_t &>();
+	auto app_name = id.substr(id.find('/') + 1);
+
+	auto build_bin = build_path / "bin";
+	auto target_bin = target_path / "bin";
+
+	fs::create_directories(target_bin);
+
+	std::cout << colors::main << "\nCopying binaries:\n" << tc::reset;
+
+	for (auto &item : fs::directory_iterator(build_bin)) {
+		auto path = item.path();
+		auto ext = path.extension();
+		if (ext != ".exe" && ext != ".dll"
+				&& ext != "" && ext != ".so")
+			continue;
+
+		auto name = path.filename();
+		if (name.stem() == "APP") {
+			std::cout << name.string() << " -> ";
+			name = (app_name += name.extension().string());
+		}
+		
+		try {
+			fs::copy(path, target_bin / name);
+			std::cout << name.string() << '\n';
+		} catch (...) {
+			std::cout << colors::error << name.string() << tc::reset << '\n';
+		}
+	}
+
+	return target_bin / app_name;
 }
 
 }

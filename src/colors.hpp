@@ -4,10 +4,12 @@
 
 namespace colors {
 
-extern std::ostream &(*success)(std::ostream &);
-extern std::ostream &(*warning)(std::ostream &);
-extern std::ostream &(*error  )(std::ostream &);
-extern std::ostream &(*main   )(std::ostream &);
+using _operator = std::ostream &(*)(std::ostream &);
+
+extern _operator success;
+extern _operator warning;
+extern _operator error;
+extern _operator main;
 
 void set_from_config();
 

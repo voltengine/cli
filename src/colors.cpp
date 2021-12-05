@@ -5,9 +5,8 @@
 namespace fs = std::filesystem;
 namespace tc = termcolor;
 namespace nl = nlohmann;
-using namespace util;
 
-std::unordered_map<std::string, decltype(colors::main)> options {
+std::map<std::string, colors::_operator> options {
 	{ "red",     tc::red },
 	{ "green",   tc::green },
 	{ "yellow",  tc::yellow },
@@ -24,10 +23,10 @@ std::unordered_map<std::string, decltype(colors::main)> options {
 
 namespace colors {
 
-std::ostream &(*success)(std::ostream &) = tc::bright_green;
-std::ostream &(*warning)(std::ostream &) = tc::bright_yellow;
-std::ostream &(*error  )(std::ostream &) = tc::bright_red;
-std::ostream &(*main   )(std::ostream &) = tc::cyan;
+_operator success = tc::bright_green;
+_operator warning = tc::bright_yellow;
+_operator error = tc::bright_red;
+_operator main = tc::cyan;
 
 void set_from_config() {
 	try {

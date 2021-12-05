@@ -21,7 +21,7 @@ publish_command::publish_command() : command(
 void publish_command::run(const std::vector<std::string> &args) const {
 	if (args.size() != 0) {
 		std::cout << colors::warning << "Ignoring extra arguments.\n\n"
-				  << tc::reset;
+		          << tc::reset;
 	}
 
 	fs::path volt_path = std::getenv("VOLT_PATH");
@@ -79,7 +79,7 @@ void publish_command::run(const std::vector<std::string> &args) const {
 	try {
 		user = common::get_user_info(token);
 	} catch (std::exception &e) {
-		std::cout << colors::warning << " Failed.\n" << tc::reset;
+		std::cout << colors::error << " Failed.\n" << tc::reset;
 		throw e;
 	}
 

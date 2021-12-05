@@ -29,7 +29,7 @@ void search_command::run(const std::vector<std::string> &args) const {
 		std::next(args.begin()), 
 		args.end(), 
 		args.front(), 
-		[](std::string &&accumulator, std::string word) {
+		[](std::string &&accumulator, auto &word) {
 			return std::move(accumulator) + ' ' + word;
 		}
 	));
@@ -53,8 +53,8 @@ void search_command::run(const std::vector<std::string> &args) const {
 			results = nl::json::parse(util::download(url + url_path));
 		} catch (std::exception &e) {
 			std::cout << colors::warning
-					  << e.what() << '\n'
-					  << tc::reset;
+			          << e.what() << '\n'
+			          << tc::reset;
 			continue;
 		}
 
@@ -82,17 +82,17 @@ void search_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("No packages were found.");
 
 	std::cout << colors::success << "\nFound " << packages.size()
-			  << (packages.size() == 1 ? " package:\n" : " packages:\n")
-			  << tc::reset;
+	          << (packages.size() == 1 ? " package:\n" : " packages:\n")
+	          << tc::reset;
 
 	for (auto &package : packages) {
 		size_t i = package.first.find('/');
 		std::cout << '\n'
-				  << colors::main << package.first.substr(0, i)
-				  << tc::reset << '/'
-				  << colors::main << package.first.substr(i + 1)
-				  << tc::reset << '\n' << package.second
-				  << '\n';
+		          << colors::main << package.first.substr(0, i)
+		          << tc::reset << '/'
+		          << colors::main << package.first.substr(i + 1)
+		          << tc::reset << '\n' << package.second
+		          << '\n';
 	}
 }
 

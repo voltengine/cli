@@ -49,7 +49,7 @@ std::string download(std::string_view url) {
 	return buffer;
 }
 
-void shell(std::string cmd, const std::function<void(std::string_view)>
+int32_t shell(std::string cmd, const std::function<void(std::string_view)>
 		&stdout_cb, bool redirect_stderr, size_t buffer_capacity) {
     std::vector<char> buffer;
 	buffer.resize(buffer_capacity);
@@ -57,17 +57,23 @@ void shell(std::string cmd, const std::function<void(std::string_view)>
 	if (redirect_stderr)
 		cmd += " 2>&1";
 
-#if _WIN32
-    std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd.c_str(), "r"), _pclose);
+#ifdef _WIN32
+    FILE *pipe = _popen(cmd.c_str(), "r");
 #else
-	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+	FILE *pipe = pipe(popen(cmd.c_str(), "r");
 #endif
 
     if (!pipe)
         throw std::runtime_error("Failed to execute command.");
 	
-    while (std::fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    while (std::fgets(buffer.data(), buffer.size(), pipe) != nullptr)
         stdout_cb(buffer.data());
+
+#ifdef _WIN32
+	return _pclose(pipe);
+#else
+	return WEXITSTATUS(pclose(pipe))
+#endif
 }
 
 }
