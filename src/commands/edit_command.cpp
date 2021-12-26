@@ -21,7 +21,7 @@ void edit_command::run(const std::vector<std::string> &args) const {
 		          << tc::reset;
 	}
 	
-	common::cmake_build("./cache/cmake/", {}, true, false);
+	common::cmake_build("./cache/cmake/", "", true, false);
 
 	fs::path current_path = fs::current_path();
 

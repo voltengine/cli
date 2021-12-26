@@ -58,6 +58,7 @@ int32_t shell(std::string cmd, const std::function<void(std::string_view)>
 		cmd += " 2>&1";
 
 #ifdef _WIN32
+	cmd = '"' + cmd + '"'; // _popen strips quotes
     FILE *pipe = _popen(cmd.c_str(), "r");
 #else
 	FILE *pipe = pipe(popen(cmd.c_str(), "r");

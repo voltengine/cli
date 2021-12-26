@@ -26,7 +26,7 @@ authorization_result authorize(const std::string &archive_url);
 
 void cmake_build(
 		const std::filesystem::path &build_path,
-		const std::filesystem::path &toolchain_path,
+		const std::string &platform,
 		bool development, bool debug);
 
 std::filesystem::path copy_cmake_output_binaries(

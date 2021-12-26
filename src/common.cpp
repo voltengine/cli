@@ -11,9 +11,34 @@ namespace tc = termcolor;
 namespace nl = nlohmann;
 using namespace util;
 
-std::vector<std::string> anim_frames {
+static std::vector<std::string> anim_frames {
 	"_",".","o","O","^","*","-","."
 };
+
+static std::map<std::string, std::string> toolchain_suffixes{
+	{ "linux-amd64", "LinuxAMD64" },
+	{ "windows-amd64", "WindowsAMD64" },
+	{ "windows-x86", "WindowsX86" }
+};
+
+#ifdef WIN32
+	#ifdef _M_X86
+static std::map<std::string, std::string> vcvarsall_filenames {
+	{ "linux-amd64", "vcvarsx86_amd64.bat" },
+	{ "windows-amd64", "vcvars32.bat" },
+	{ "windows-x86", "vcvarsx86_amd64.bat" }
+};
+static std::string default_vcvarsall = "vcvars32.bat";
+	#else
+static std::map<std::string, std::string> vcvarsall_filenames {
+	{ "linux-amd64", "vcvars64.bat" },
+	{ "windows-amd64", "vcvars64.bat" },
+	{ "windows-x86", "vcvarsamd64_x86.bat" }
+};
+static std::string default_vcvarsall = "vcvars64.bat";
+	#endif
+#endif
+
 
 namespace common {
 
@@ -297,22 +322,46 @@ authorization_result authorize(const std::string &archive_url) {
 
 void cmake_build(
 		const fs::path &build_path,
-		const fs::path &toolchain_path,
+		const std::string &platform,
 		bool development, bool debug) {
 	auto build_path_str = build_path.string();
-	auto toolchain_path_str = toolchain_path.string();
+
+	// Get path to the CMake toolchain
+	fs::path volt_path = std::getenv("VOLT_PATH");
+	auto toolchains_path = volt_path / "cmake" / "toolchains";
+	if (!toolchain_suffixes.contains(platform))
+		throw std::runtime_error("Invalid platform.");
+
+	std::string toolchain_path_str;
+	if (!platform.empty()) {
+		fs::path toolchain_path = toolchains_path / (VOLT_CLI_TOOLCHAIN_PREFIX
+			"-" + toolchain_suffixes[platform] + ".cmake");
+		toolchain_path_str = toolchain_path.string();
+	}
 
 #ifdef _WIN32
 	util::replace(build_path_str, "\\", "\\\\");
 	util::replace(toolchain_path_str, "\\", "\\\\");
+
+	const char *comn_tools = std::getenv("VS170COMNTOOLS");
+	if (comn_tools == nullptr)
+		throw std::runtime_error("Visual Studio 2022 is not installed.");
+
+	fs::path vcvarsall_path = fs::path(comn_tools) / "..\\..\\VC\\Auxiliary\\Build";
+	vcvarsall_path /= platform.empty() ? default_vcvarsall : vcvarsall_filenames[platform];
+	std::string vcvarsall_cmd_prefix = "\"" + vcvarsall_path.string() + "\" && ";
 #endif
 
-	std::string cmd = "cmake -S . -B \"" + build_path_str + "\" --no-warn-unused-cli"
+	std::string cmd = "cmake -S . -B \"" + build_path_str + "\" -G Ninja --no-warn-unused-cli"
 			" -D CMAKE_BUILD_TYPE=" + (debug ? "Debug" : "Release");
-	if (!toolchain_path.empty())
+	if (!toolchain_path_str.empty())
 		cmd += " -D CMAKE_TOOLCHAIN_FILE=\"" + toolchain_path_str + '"';
 	if (!development)
 		cmd += " -D VOLT_DEVELOPMENT=OFF";
+
+#ifdef _WIN32
+	cmd = vcvarsall_cmd_prefix + cmd;
+#endif
 
 	std::cout << colors::main << "CMake configuration:\n" << tc::reset;
 	
@@ -321,11 +370,18 @@ void cmake_build(
 	}) != 0)
 		throw std::runtime_error("CMake configuration failed.");
 
+	cmd = "cmake --build \"" + build_path_str
+			+ "\" --config " + (debug ? "Debug" : "Release") +
+			+ " -j " + util::to_string(std::thread::hardware_concurrency() + 2)
+			+ " --target all";
+
+#ifdef _WIN32
+	cmd = vcvarsall_cmd_prefix + cmd;
+#endif
+
 	std::cout << colors::main << "\nCMake build:\n" << tc::reset;
 
-	if (util::shell("cmake --build \"" + build_path_str +
-			"\" --config " + (debug ? "Debug" : "Release"),
-			[](std::string_view out) {
+	if (util::shell(cmd, [](std::string_view out) {
 		std::cout << out;
 	}) != 0)
 		throw std::runtime_error("CMake build failed.");

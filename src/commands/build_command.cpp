@@ -11,12 +11,6 @@ namespace fs = std::filesystem;
 namespace tc = termcolor;
 namespace nl = nlohmann;
 
-std::map<std::string, std::string> platforms{
-	{ "linux-amd64", "LinuxAMD64" },
-	{ "windows-amd64", "WindowsAMD64" },
-	{ "windows-x86", "WindowsX86" }
-};
-
 namespace commands {
 
 build_command::build_command() : command(
@@ -36,20 +30,12 @@ void build_command::run(const std::vector<std::string> &args) const {
 
 	fs::path volt_path = std::getenv("VOLT_PATH");
 	auto current_path = fs::current_path();
-	auto toolchains_path = volt_path / "cmake" / "toolchains";
-	
-	// Get path to the CMake toolchain
-	if (!platforms.contains(args[0]))
-		throw std::runtime_error("Invalid platform.");
-
-	fs::path toolchain_path = toolchains_path / (VOLT_CLI_TOOLCHAIN_PREFIX
-			"-" + platforms[args[0]] + ".cmake");
 
 	std::string build_dir = "./cache/cmake-build/";
 	if (args.size() != 0)
 		fs::remove_all(build_dir);
 
-	common::cmake_build(build_dir, toolchain_path, false, false);
+	common::cmake_build(build_dir, args[0], false, false);
 
 	// Get "./" and "./build/{platform}/"
 	auto current_path_str = current_path.string() + '/';

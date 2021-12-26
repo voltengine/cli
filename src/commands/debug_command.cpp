@@ -21,7 +21,7 @@ void debug_command::run(const std::vector<std::string> &args) const {
 		          << tc::reset;
 	}
 	
-	common::cmake_build("./cache/cmake/", {}, true, true);
+	common::cmake_build("./cache/cmake/", "", true, true);
 
 	fs::path current_path = fs::current_path();
 
