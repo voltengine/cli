@@ -81,9 +81,9 @@ void install_command::run(const std::vector<std::string> &args) const {
 	}
 
 	if (args.size() > 1)
-		util::version(args[1]);
+		util::version tmp(args[1]);
 
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path package_path = fs::current_path() / "package.json";
 
 	if (!fs::exists(package_path))
@@ -140,7 +140,7 @@ void install_command::run(const std::vector<std::string> &args) const {
 		throw std::runtime_error("Package has no dependencies.");
 
 	auto root = std::make_shared<dependency>();
-	root->set_id(package["id"]);
+	root->set_id(package["id"].get_ref<nl::json::string_t &>());
 	root->version = util::version(package["version"]);
 
 	// Parent + deps to process and attach to it
@@ -214,8 +214,8 @@ void install_command::run(const std::vector<std::string> &args) const {
 
 			if (!(*manifest)["releases"].contains(version_str)) {
 				pkg.first->warnings.push_back("Package " + pkg.first->get_root_path()
-						  + " specifies non-existent release "
-						  + version_str + " of " + dep.first + '.');
+						+ " specifies non-existent release "
+						+ version_str + " of " + dep.first + '.');
 				continue;
 			}
 

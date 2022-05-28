@@ -28,8 +28,8 @@ void info_command::run(const std::vector<std::string> &args) const {
 
 	std::string id, release = args.size() > 1 ? args[1] : "";;
 	nl::json manifest;
-	bool fake_manifest;
-	if (fake_manifest = args.size() == 0) {
+	bool fake_manifest = (args.size() == 0);
+	if (fake_manifest) {
 		fs::path package_path = fs::current_path() / "package.json";
 		if (!fs::exists(package_path))
 			throw std::runtime_error("No \"package.json\" in current directory.");

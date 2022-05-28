@@ -206,10 +206,10 @@ const std::vector<std::string> &version::get_build_metadata() const noexcept {
 	return build_metadata;
 }
 
-void version::set_build_metadata(const std::vector<std::string> &build) {
+void version::set_build_metadata(const std::vector<std::string> &build_metadata) {
 	static const std::regex validator("[0-9A-Za-z-]+");
 
-	for (std::string &identifier : build_metadata) {
+	for (const std::string &identifier : build_metadata) {
 		if (identifier.empty() || !std::regex_match(identifier, validator)) {
 			throw std::invalid_argument("Identifiers must comprise"
 					" only ASCII alphanumerics and hyphens."

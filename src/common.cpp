@@ -18,7 +18,7 @@ static std::vector<std::string> anim_frames {
 static std::map<std::string, std::string> toolchain_suffixes{
 	{ "linux-amd64", "LinuxAMD64" },
 	{ "windows-amd64", "WindowsAMD64" },
-	{ "windows-x86", "WindowsX86" }
+	{ "windows-i686", "WindowsI686" }
 };
 
 #ifdef WIN32
@@ -26,14 +26,14 @@ static std::map<std::string, std::string> toolchain_suffixes{
 static std::map<std::string, std::string> vcvarsall_filenames {
 	{ "linux-amd64", "vcvarsx86_amd64.bat" },
 	{ "windows-amd64", "vcvars32.bat" },
-	{ "windows-x86", "vcvarsx86_amd64.bat" }
+	{ "windows-i686", "vcvarsx86_amd64.bat" }
 };
 static std::string default_vcvarsall = "vcvars32.bat";
 	#else
 static std::map<std::string, std::string> vcvarsall_filenames {
 	{ "linux-amd64", "vcvars64.bat" },
 	{ "windows-amd64", "vcvars64.bat" },
-	{ "windows-x86", "vcvarsamd64_x86.bat" }
+	{ "windows-i686", "vcvarsamd64_x86.bat" }
 };
 static std::string default_vcvarsall = "vcvars64.bat";
 	#endif
@@ -44,7 +44,7 @@ namespace common {
 
 std::string get_valid_id(std::string id) {
 	nl::json config = nl::json::parse(util::read_file(
-			std::getenv("VOLT_PATH") / fs::path("config.json")));
+			common::getenv("VOLT_PATH") / fs::path("config.json")));
 
 	if (id.find('/') == std::string::npos)
 		id = config["defaultScope"].get_ref<nl::json::string_t &>() + '/' + id;
@@ -63,7 +63,7 @@ nl::json find_manifest_in_archives(std::string id, bool verbose) {
 	nl::json manifest;
 
 	nl::json::object_t archives = nl::json::parse(util::read_file(
-			std::getenv("VOLT_PATH") / fs::path("config.json"))
+			common::getenv("VOLT_PATH") / fs::path("config.json"))
 			)["archives"];
 
 	for (auto &archive : archives) {
@@ -94,7 +94,7 @@ nl::json find_manifest_in_archives(std::string id, bool verbose) {
 }
 
 std::string select_archive() {
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path config_path = volt_path / "config.json";
 
 	nl::json::object_t archives = nl::json::parse(
@@ -152,7 +152,7 @@ std::string select_archive() {
 }
 
 std::string get_cached_token(const std::string &archive_url) {
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path config_path = volt_path / "config.json";
 
 	nl::json config = nl::json::parse(util::read_file(config_path));
@@ -160,7 +160,7 @@ std::string get_cached_token(const std::string &archive_url) {
 }
 
 nl::json get_user_info(const std::string &token) {
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
 
 	if (token.empty())
@@ -196,7 +196,7 @@ nl::json get_user_info(const std::string &token) {
 }
  
 authorization_result authorize(const std::string &archive_url) {
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path config_path = volt_path / "config.json";
 	fs::path cert_path = volt_path / "cacert.pem";
 
@@ -231,7 +231,7 @@ authorization_result authorize(const std::string &archive_url) {
 
 	std::string device_code = response["device_code"];
 	uint32_t expires_in = response["expires_in"];
-	uint32_t interval = response["interval"] + 1;
+	uint32_t interval = response["interval"].get<uint32_t>() + 1;
 	std::string user_code = response["user_code"];
 	std::string verification_uri = response["verification_uri"];
 
@@ -290,7 +290,7 @@ authorization_result authorize(const std::string &archive_url) {
 				break;
 			
 			if (response.contains("interval"))
-				interval = response["interval"] + 1;
+				interval = response["interval"].get<uint32_t>() + 1;
 		}
 
 		result.token = response["access_token"];
@@ -300,9 +300,9 @@ authorization_result authorize(const std::string &archive_url) {
 			throw std::runtime_error("Received invalid token.");
 
 		std::cout << "Authorized as "
-			      << colors::main
+		          << colors::main
 		          << result.user["login"].get_ref<nl::json::string_t &>()
-			      << tc::reset << ".               \n";
+		          << tc::reset << ".               \n";
 	} catch (std::exception &e) {
 		std::cout << "Authorization failed.         \n";
 		util::show_terminal_cursor(true);
@@ -327,7 +327,7 @@ void cmake_build(
 	auto build_path_str = build_path.string();
 
 	// Get path to the CMake toolchain
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	auto toolchains_path = volt_path / "cmake" / "toolchains";
 	if (!toolchain_suffixes.contains(platform))
 		throw std::runtime_error("Invalid platform.");
@@ -343,7 +343,7 @@ void cmake_build(
 	util::replace(build_path_str, "\\", "\\\\");
 	util::replace(toolchain_path_str, "\\", "\\\\");
 
-	const char *comn_tools = std::getenv("VS170COMNTOOLS");
+	const char *comn_tools = common::getenv("VS170COMNTOOLS");
 	if (comn_tools == nullptr)
 		throw std::runtime_error("Visual Studio 2022 is not installed.");
 
@@ -426,6 +426,13 @@ fs::path copy_cmake_output_binaries(
 	}
 
 	return target_bin / app_name;
+}
+
+std::string getenv(const std::string &name) {
+	char *env = std::getenv(name.data());
+	if (env == nullptr)
+		throw std::runtime_error("Failed to read environment variable \"" + name + "\".");
+	return env;
 }
 
 }

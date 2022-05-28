@@ -2,6 +2,7 @@
 
 #include "util/file.hpp"
 #include "colors.hpp"
+#include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
@@ -31,7 +32,7 @@ void list_command::run(const std::vector<std::string> &args) const {
 		          << tc::reset;
 	}
 
-	fs::path packages_path = std::getenv("VOLT_PATH") / fs::path("packages/");
+	fs::path packages_path = common::getenv("VOLT_PATH") / fs::path("packages/");
 	std::vector<package> packages;
 
 	if (fs::exists(packages_path) && !fs::is_empty(packages_path)) {

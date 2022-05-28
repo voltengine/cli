@@ -24,7 +24,7 @@ void publish_command::run(const std::vector<std::string> &args) const {
 		          << tc::reset;
 	}
 
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
 	fs::path package_path = fs::current_path() / "package.json";
 

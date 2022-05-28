@@ -6,7 +6,7 @@ namespace util {
 
 class http {
 public:
-	using headers = std::unordered_map<std::string, std::string>;
+	using header_map = std::unordered_map<std::string, std::string>;
 	using buffer = std::vector<uint8_t>;
 	using error = std::runtime_error;
 
@@ -19,17 +19,17 @@ public:
 
 	struct method {
 		static constexpr char
-				    get[] = "GET",
-				   post[] = "POST",
-					put[] = "PUT",
-				    del[] = "DELETE",
-				   head[] = "HEAD",
-				options[] = "OPTIONS";
+		            get[] = "GET",
+		           post[] = "POST",
+		            put[] = "PUT",
+		            del[] = "DELETE",
+		           head[] = "HEAD",
+		        options[] = "OPTIONS";
 	};
 
 	struct response {
 		int32_t status = -1;
-		headers headers;
+		header_map headers;
 	};
 
 	static constexpr uint32_t buffer_size = 16 * 1024;
@@ -62,7 +62,7 @@ public:
 
 private:
 	CURL *handle;
-	headers request_headers;
+	header_map request_headers;
 	// cURL keeps pointers to these
 	std::string certificate, method, url, body;
 

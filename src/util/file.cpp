@@ -1,6 +1,7 @@
 #include "file.hpp"
 
-#include "http.hpp"
+#include "util/http.hpp"
+#include "common.hpp"
 
 namespace fs = std::filesystem;
 
@@ -26,14 +27,14 @@ std::string read_file(const fs::path &path) {
 void write_file(const fs::path &path, std::string_view str) {
 	fs::create_directories(path.parent_path());
 	std::ofstream stream(path, std::ofstream::out);
-    stream << str;
+	stream << str;
 }
 
 std::string download(std::string_view url) {
 	std::string buffer;
 
 	http request;
-	request.set_certificate(std::getenv("VOLT_PATH") / fs::path("cacert.pem"));
+	request.set_certificate(common::getenv("VOLT_PATH") / fs::path("cacert.pem"));
 	request.set_url(url);
 	request.on_response([](const http::response &response) {
 		if (response.status != 200) {
@@ -51,7 +52,7 @@ std::string download(std::string_view url) {
 
 int32_t shell(std::string cmd, const std::function<void(std::string_view)>
 		&stdout_cb, bool redirect_stderr, size_t buffer_capacity) {
-    std::vector<char> buffer;
+	std::vector<char> buffer;
 	buffer.resize(buffer_capacity);
 
 	if (redirect_stderr)
@@ -59,21 +60,21 @@ int32_t shell(std::string cmd, const std::function<void(std::string_view)>
 
 #ifdef _WIN32
 	cmd = '"' + cmd + '"'; // _popen strips quotes
-    FILE *pipe = _popen(cmd.c_str(), "r");
+	FILE *pipe = _popen(cmd.c_str(), "r");
 #else
-	FILE *pipe = pipe(popen(cmd.c_str(), "r");
+	FILE *pipe = popen(cmd.c_str(), "r");
 #endif
 
-    if (!pipe)
-        throw std::runtime_error("Failed to execute command.");
+	if (!pipe)
+		throw std::runtime_error("Failed to execute command.");
 	
-    while (std::fgets(buffer.data(), buffer.size(), pipe) != nullptr)
-        stdout_cb(buffer.data());
+	while (std::fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+		stdout_cb(buffer.data());
 
 #ifdef _WIN32
 	return _pclose(pipe);
 #else
-	return WEXITSTATUS(pclose(pipe))
+	return WEXITSTATUS(pclose(pipe));
 #endif
 }
 

@@ -36,7 +36,7 @@ void http::send() {
 	curl_slist *curl_header = nullptr;
 	for (auto &header : request_headers) {
 		std::string str = header.first + ": " + header.second;
-    	curl_header = curl_slist_append(curl_header, str.c_str());
+		curl_header = curl_slist_append(curl_header, str.c_str());
 	}
 	curl_easy_setopt(handle, CURLOPT_HTTPHEADER, curl_header);
 

@@ -1,7 +1,6 @@
 {
 	"cmake.debugConfig": {
-		"args": ["install"],
-		"cwd": "D:\\Library\\Source\\voltengine\\cli\\local-packages\\test-dependency\\"
+		"args": ["install"]
     },
 	"files.associations": {
 		"*.fsh": "glsl",
@@ -98,6 +97,14 @@
 		"bit": "cpp",
 		"charconv": "cpp",
 		"format": "cpp",
-		"stop_token": "cpp"
+		"stop_token": "cpp",
+		"*.tcc": "cpp",
+		"unordered_set": "cpp",
+		"memory_resource": "cpp",
+		"string_view": "cpp",
+		"numbers": "cpp",
+		"semaphore": "cpp",
+		"cfenv": "cpp",
+		"cinttypes": "cpp"
 	}
 }

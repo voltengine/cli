@@ -1,6 +1,7 @@
 #include "colors.hpp"
 
 #include "util/file.hpp"
+#include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
@@ -31,7 +32,7 @@ _operator main = tc::cyan;
 void set_from_config() {
 	try {
 		nl::json config = nl::json::parse(util::read_file(
-			std::getenv("VOLT_PATH") / fs::path("config.json")));
+				common::getenv("VOLT_PATH") / fs::path("config.json")));
 		main = options[config["color"]];
 	} catch (...) {}
 }

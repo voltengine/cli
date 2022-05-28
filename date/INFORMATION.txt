@@ -1,0 +1,3 @@
+This directory is needed because as of 2022-05-28,
+the date library has not had a more recent release than 3.0.1.
+Conan does not provide a way to install the latest commit.

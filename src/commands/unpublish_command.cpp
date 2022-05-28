@@ -30,7 +30,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 
 	// Throws if argument is invalid
 	if (args.size() > 1)
-		util::version(args[1]);
+		util::version tmp(args[1]);
 
 	std::string id = common::get_valid_id(args[0]);
 
@@ -58,7 +58,7 @@ void unpublish_command::run(const std::vector<std::string> &args) const {
 	} else
 		std::cout << colors::success << " Success.\n" << tc::reset;
 
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	fs::path cert_path = volt_path / "cacert.pem";
 
 	std::string buffer;

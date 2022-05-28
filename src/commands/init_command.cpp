@@ -4,6 +4,7 @@
 #include "util/string.hpp"
 #include "colors.hpp"
 #include "command_manager.hpp"
+#include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
@@ -179,7 +180,7 @@ void init_command::run(const std::vector<std::string> &args) const {
 
 	// Copy the template
 	std::cout << "\nCopying template files...";
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	try {
 		fs::copy(volt_path / "template", current_path);
 	} catch (...) {

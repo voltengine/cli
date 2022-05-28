@@ -3,6 +3,7 @@
 #include "util/file.hpp"
 #include "util/url.hpp"
 #include "colors.hpp"
+#include "common.hpp"
 
 namespace fs = std::filesystem;
 namespace tc = termcolor;
@@ -38,7 +39,7 @@ void search_command::run(const std::vector<std::string> &args) const {
 	std::unordered_map<std::string, std::string> packages;
 
 	nl::json::object_t archives = nl::json::parse(util::read_file(
-			std::getenv("VOLT_PATH") / fs::path("config.json"))
+			common::getenv("VOLT_PATH") / fs::path("config.json"))
 			)["archives"];
 
 	for (auto &archive : archives) {

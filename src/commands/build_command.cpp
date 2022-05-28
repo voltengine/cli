@@ -18,7 +18,7 @@ build_command::build_command() : command(
 		"{platform}",
 		"Executes CMake ALL build for release on specified platform at \"./cache/cmake-build/\".\n"
 		"Then calls Python scripts in order to bundle assets to \"./build/{platform}/\".\n"
-		"Supported platforms:\nlinux-amd64 windows-amd64 windows-x86") {}
+		"Supported platforms:\nlinux-amd64 windows-amd64 windows-i686") {}
 
 void build_command::run(const std::vector<std::string> &args) const {
 	if (args.size() == 0)
@@ -28,7 +28,7 @@ void build_command::run(const std::vector<std::string> &args) const {
 		          << tc::reset;
 	}
 
-	fs::path volt_path = std::getenv("VOLT_PATH");
+	fs::path volt_path = common::getenv("VOLT_PATH");
 	auto current_path = fs::current_path();
 
 	std::string build_dir = "./cache/cmake-build/";

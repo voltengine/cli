@@ -33,4 +33,6 @@ std::filesystem::path copy_cmake_output_binaries(
 		const std::filesystem::path &build_path,
 		const std::filesystem::path &target_path);
 
+std::string getenv(const std::string &name);
+
 }
