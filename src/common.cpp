@@ -329,13 +329,18 @@ void cmake_build(
 	// Get path to the CMake toolchain
 	fs::path volt_path = common::getenv("VOLT_PATH");
 	auto toolchains_path = volt_path / "cmake" / "toolchains";
-	if (!toolchain_suffixes.contains(platform))
-		throw std::runtime_error("Invalid platform.");
 
 	std::string toolchain_path_str;
 	if (!platform.empty()) {
+		if (!toolchain_suffixes.contains(platform))
+			throw std::runtime_error("Invalid platform: " + platform);
+
 		fs::path toolchain_path = toolchains_path / (VOLT_CLI_TOOLCHAIN_PREFIX
 			"-" + toolchain_suffixes[platform] + ".cmake");
+		toolchain_path_str = toolchain_path.string();
+	} else {
+		fs::path toolchain_path = toolchains_path / (VOLT_CLI_TOOLCHAIN_PREFIX
+			"-" VOLT_CLI_TOOLCHAIN_PREFIX ".cmake");
 		toolchain_path_str = toolchain_path.string();
 	}
 
@@ -365,6 +370,7 @@ void cmake_build(
 
 	std::cout << colors::main << "CMake configuration:\n" << tc::reset;
 	
+	std::cout << "> " << cmd << "\n\n";
 	if (util::shell(cmd, [](std::string_view out) {
 		std::cout << out;
 	}) != 0)
@@ -381,6 +387,7 @@ void cmake_build(
 
 	std::cout << colors::main << "\nCMake build:\n" << tc::reset;
 
+	std::cout << "> " << cmd << "\n\n";
 	if (util::shell(cmd, [](std::string_view out) {
 		std::cout << out;
 	}) != 0)

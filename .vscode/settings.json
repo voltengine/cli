@@ -1,6 +1,6 @@
 {
 	"cmake.debugConfig": {
-		"args": ["install"]
+		"args": ["auth"]
     },
 	"files.associations": {
 		"*.fsh": "glsl",
